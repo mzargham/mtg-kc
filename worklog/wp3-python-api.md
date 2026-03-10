@@ -1,6 +1,6 @@
 # WP3 — Python Package API
 
-## Status: Not Started
+## Status: In Review
 
 ## Scope
 
@@ -51,3 +51,8 @@ Requirements covered by tests: REQ-SCHEMA-01 through REQ-SCHEMA-09, REQ-GRAPH-01
 
 | Date | Change Requested | Resolution |
 |------|-----------------|------------|
+| 2026-03-10 | Implement all 14 stubs in schema.py and graph.py | Implemented SchemaBuilder (7 methods) and KnowledgeComplex (7 methods). All 26 WP3 tests pass, 44/48 total (4 skipped = WP4). REQ-SCHEMA-01–09, REQ-GRAPH-01–09, REQ-QUERY-01–04. H3, H4, H6 satisfied. |
+| 2026-03-10 | Rename "Relationship" → "ColorPair" | Edge type renamed across model, tests, docs, SPARQL queries, demo stubs. Reserves "Relationship" for future cross-model use. |
+| 2026-03-10 | Attribute namespace: model-owned, not core | Attributes (disposition, pattern) placed in model namespace (mtg:) not kc:. SPARQL queries updated. Test fixture changed to namespace="mtg". |
+| 2026-03-10 | rdflib URI comparison bug in SPARQL FILTER | rdflib does not support < on URIRefs in SPARQL. Fixed queries to use STR(?x) < STR(?y). |
+| 2026-03-10 | Deferred issue: model composition | Created docs/issues/model-composition.md — bridge model pattern, namespace isolation, 5 design concerns for multi-model composition. |

@@ -41,7 +41,7 @@ The internal representation is hidden; we can inspect it via `dump_owl()` / `dum
 
 sb = SchemaBuilder(namespace="mtg")
 sb.add_vertex_type("Color")
-sb.add_edge_type("Relationship",
+sb.add_edge_type("ColorPair",
                  attributes={"disposition": vocab("adjacent", "opposite")})
 sb.add_face_type("ColorTriple",
                  attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})

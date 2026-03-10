@@ -2,7 +2,7 @@
 models.mtg — MTG color wheel domain model.
 
 Layer 2: domain-specific schema types and queries built on the kc framework.
-Defines Color, Relationship, and ColorTriple types with MTG-specific
+Defines Color, ColorPair, and ColorTriple types with MTG-specific
 controlled vocabularies and SPARQL queries.
 
 Usage:

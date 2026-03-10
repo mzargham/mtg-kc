@@ -28,11 +28,16 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyshacl
+from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, OWL, XSD
 
 from kc.exceptions import ValidationError, UnknownQueryError
 from kc.schema import SchemaBuilder
 
 _FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
+
+# Internal namespace constants
+_KC = Namespace("https://example.org/kc#")
 
 
 def _load_query_templates(
@@ -76,7 +81,7 @@ class KnowledgeComplex:
     >>> from models.mtg import build_mtg_schema, QUERIES_DIR
     >>> kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
     >>> kc.add_vertex("White", type="Color")
-    >>> kc.add_edge("WU", type="Relationship",
+    >>> kc.add_edge("WU", type="ColorPair",
     ...             vertices={"White", "Blue"}, disposition="adjacent")
     >>> kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
     >>> df = kc.query("faces_by_edge_pattern")
@@ -91,6 +96,7 @@ class KnowledgeComplex:
         self._query_templates = _load_query_templates(extra_dirs=query_dirs)
         self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
         self._complex_iri: Any = None     # URIRef for the kc:Complex individual
+        self._ns = schema._ns
         self._init_graph()
 
     def _init_graph(self) -> None:
@@ -102,12 +108,27 @@ class KnowledgeComplex:
         elements added via add_vertex / add_edge / add_face.
         Stores the ontology + shapes graphs separately for pyshacl calls.
         """
-        # TODO (WP3):
-        #   1. Parse schema.dump_owl() into rdflib.Graph (instance graph)
-        #   2. Store schema OWL and SHACL graphs for pyshacl ont_graph/shacl_graph
-        #   3. Create kc:Complex individual: _complex_iri = URIRef(f"{namespace}#_complex")
-        #   4. Assert (_complex_iri, RDF.type, KC.Complex) in instance graph
-        raise NotImplementedError
+        # Parse merged OWL into instance graph (TBox + ABox in one graph)
+        self._instance_graph = Graph()
+        self._instance_graph.parse(data=self._schema.dump_owl(), format="turtle")
+
+        # Separate graphs for pyshacl validation
+        self._ont_graph = Graph()
+        self._ont_graph.parse(data=self._schema.dump_owl(), format="turtle")
+        self._shacl_graph = Graph()
+        self._shacl_graph.parse(data=self._schema.dump_shacl(), format="turtle")
+
+        # Create kc:Complex individual
+        self._complex_iri = URIRef(f"{self._schema._base_iri}_complex")
+        self._instance_graph.add((self._complex_iri, RDF.type, _KC.Complex))
+
+        # Bind prefixes for SPARQL queries and serialization
+        self._instance_graph.bind("kc", _KC)
+        self._instance_graph.bind(self._schema._namespace, self._ns)
+        self._instance_graph.bind("rdfs", RDFS)
+        self._instance_graph.bind("rdf", RDF)
+        self._instance_graph.bind("owl", OWL)
+        self._instance_graph.bind("xsd", XSD)
 
     def _validate(self, focus_node_id: str | None = None) -> None:
         """
@@ -125,16 +146,76 @@ class KnowledgeComplex:
         Parameters
         ----------
         focus_node_id : str, optional
-            If provided, validate only this node (for incremental write validation).
-            If None, validate entire graph.
+            If provided, used in the error message to identify which element
+            triggered the failure. Validation always covers the entire graph.
 
         Raises
         ------
         ValidationError
             If validation fails. report attribute contains human-readable text.
         """
-        # TODO (WP3): call pyshacl.validate(); raise ValidationError on failure
-        raise NotImplementedError
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        if not conforms:
+            msg = "SHACL validation failed"
+            if focus_node_id:
+                msg += f" (after adding '{focus_node_id}')"
+            raise ValidationError(msg, report=results_text)
+
+    def _assert_element(
+        self,
+        id: str,
+        type: str,
+        boundary_ids: list[str] | None,
+        attributes: dict[str, Any],
+    ) -> None:
+        """Common logic for add_vertex, add_edge, add_face."""
+        # Step 0: Python-side type guard
+        if type not in self._schema._types:
+            raise ValidationError(
+                f"Unregistered type: '{type}'",
+                report=f"Type '{type}' is not registered in the schema. "
+                       f"Registered types: {sorted(self._schema._types.keys())}",
+            )
+
+        type_iri = self._ns[type]
+        id_iri = URIRef(f"{self._schema._base_iri}{id}")
+
+        # Track triples added for rollback on validation failure
+        added_triples = []
+
+        def add(s, p, o):
+            self._instance_graph.add((s, p, o))
+            added_triples.append((s, p, o))
+
+        # Assert type
+        add(id_iri, RDF.type, type_iri)
+
+        # Assert boundary relations
+        if boundary_ids:
+            for bid in boundary_ids:
+                b_iri = URIRef(f"{self._schema._base_iri}{bid}")
+                add(id_iri, _KC.boundedBy, b_iri)
+
+        # Assert attributes (in model namespace)
+        for attr_name, attr_value in attributes.items():
+            add(id_iri, self._ns[attr_name], Literal(attr_value))
+
+        # Add to complex
+        add(self._complex_iri, _KC.hasElement, id_iri)
+
+        # Validate — rollback on failure
+        try:
+            self._validate(id)
+        except ValidationError:
+            for s, p, o in added_triples:
+                self._instance_graph.remove((s, p, o))
+            raise
 
     def add_vertex(self, id: str, type: str, **attributes: Any) -> None:
         """
@@ -161,14 +242,7 @@ class KnowledgeComplex:
         ValidationError
             If SHACL validation fails after assertion.
         """
-        # TODO (WP3):
-        #   0. Check type is registered in schema._types (Python-side guard;
-        #      SHACL cannot catch unregistered types — see ARCHITECTURE.md)
-        #   1. Assert (id_iri, RDF.type, type_iri) in instance graph
-        #   2. Assert any attributes as data properties
-        #   3. Assert (_complex_iri, KC.hasElement, id_iri)
-        #   4. Call _validate(id)
-        raise NotImplementedError
+        self._assert_element(id, type, boundary_ids=None, attributes=attributes)
 
     def add_edge(
         self,
@@ -210,14 +284,7 @@ class KnowledgeComplex:
         """
         if len(vertices) != 2:
             raise ValueError(f"add_edge requires exactly 2 vertices; got {len(vertices)}")
-        # TODO (WP3):
-        #   0. Check type is registered in schema._types (Python-side guard)
-        #   1. Assert (id_iri, RDF.type, type_iri)
-        #   2. Assert (id_iri, KC.boundedBy, v_iri) for each vertex
-        #   3. Assert any attributes as data properties
-        #   4. Assert (_complex_iri, KC.hasElement, id_iri)
-        #   5. Call _validate(id)
-        raise NotImplementedError
+        self._assert_element(id, type, boundary_ids=list(vertices), attributes=attributes)
 
     def add_face(
         self,
@@ -258,14 +325,7 @@ class KnowledgeComplex:
         """
         if len(boundary) != 3:
             raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
-        # TODO (WP3):
-        #   0. Check type is registered in schema._types (Python-side guard)
-        #   1. Assert (id_iri, RDF.type, type_iri)
-        #   2. Assert (id_iri, KC.boundedBy, e_iri) for each edge
-        #   3. Assert any attributes as data properties
-        #   4. Assert (_complex_iri, KC.hasElement, id_iri)
-        #   5. Call _validate(id)
-        raise NotImplementedError
+        self._assert_element(id, type, boundary_ids=boundary, attributes=attributes)
 
     def query(self, template_name: str, **kwargs: Any) -> pd.DataFrame:
         """
@@ -296,8 +356,24 @@ class KnowledgeComplex:
                 f"No query template named '{template_name}'. "
                 f"Available: {sorted(self._query_templates)}"
             )
-        # TODO (WP3): substitute kwargs, execute via rdflib, return DataFrame
-        raise NotImplementedError
+        sparql = self._query_templates[template_name]
+
+        # Provide namespace bindings for queries that may not declare all prefixes
+        init_ns = {
+            "kc": _KC,
+            "rdf": RDF,
+            "rdfs": RDFS,
+            "owl": OWL,
+            "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+
+        columns = [str(v) for v in results.vars]
+        rows = []
+        for row in results:
+            rows.append([str(val) if val is not None else None for val in row])
+        return pd.DataFrame(rows, columns=columns)
 
     def dump_graph(self) -> str:
         """
@@ -305,5 +381,4 @@ class KnowledgeComplex:
 
         REQ-GRAPH-08
         """
-        # TODO (WP3)
-        raise NotImplementedError
+        return self._instance_graph.serialize(format="turtle")

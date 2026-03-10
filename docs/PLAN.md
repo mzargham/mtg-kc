@@ -34,14 +34,14 @@ The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is suff
 **Vertex type:** `Color` (subclass of `KC:Vertex`)
 - No additional attributes at this stage
 
-**Edge type:** `Relationship` (subclass of `KC:Edge`)
-- Attribute: `kc:disposition` ∈ `{"adjacent", "opposite"}`
+**Edge type:** `ColorPair` (subclass of `KC:Edge`)
+- Attribute: `mtg:disposition` ∈ `{"adjacent", "opposite"}`
 - 5 adjacent edges (pentagon neighbors), 5 opposite edges (pentagon diagonals)
 - Pentagon adjacency: W-U, U-B, B-R, R-G, G-W
 - Pentagon opposites: W-B, W-R, U-G, U-R, B-G
 
 **Face type:** `ColorTriple` (subclass of `KC:Face`)
-- Attribute: `kc:pattern` ∈ `{"ooa", "oaa"}` — **not pre-asserted in demo instance**
+- Attribute: `mtg:pattern` ∈ `{"ooa", "oaa"}` — **not pre-asserted in demo instance**
 - 10 valid triangles exist in the 10-edge complete graph
 - Pattern is discovered via SPARQL; promotion to explicit attribute is the closing exercise
 
@@ -89,7 +89,7 @@ sb = SchemaBuilder(namespace="mtg")
 sb.add_vertex_type("Color")
 
 sb.add_edge_type(
-    "Relationship",
+    "ColorPair",
     attributes={"disposition": vocab("adjacent", "opposite")}
 )
 
@@ -112,7 +112,7 @@ One call, two internal locations. The package enforces this invariant.
 kc = KnowledgeComplex(schema=sb)
 
 kc.add_vertex("White", type="Color")
-kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},
             disposition="adjacent")
 kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
 # ↑ triggers SHACL validation on write; raises ValidationError with report on failure
@@ -145,7 +145,7 @@ Deliverable: `kc/schema.py`, `kc/graph.py`, `kc/exceptions.py`, `kc/__init__.py`
 ### WP4 — MTG Demo Instance (`demo/demo_instance.py`)
 
 - 5 `Color` vertices: White, Blue, Black, Red, Green
-- 10 `Relationship` edges with correct `disposition` values
+- 10 `ColorPair` edges with correct `disposition` values
 - 10 valid `ColorTriple` faces — no `pattern` attribute asserted
 - All faces must pass SHACL structural validation before notebook proceeds
 

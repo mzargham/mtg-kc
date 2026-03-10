@@ -38,7 +38,7 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
         ("GW", "Green", "White"),
     ]
     for eid, v1, v2 in adjacent:
-        kc.add_edge(eid, type="Relationship",
+        kc.add_edge(eid, type="ColorPair",
                     vertices={v1, v2}, disposition="adjacent")
 
     # REQ-DEMO-03: 5 opposite edges (pentagon diagonals)
@@ -50,7 +50,7 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
         ("BG", "Black", "Green"),
     ]
     for eid, v1, v2 in opposite:
-        kc.add_edge(eid, type="Relationship",
+        kc.add_edge(eid, type="ColorPair",
                     vertices={v1, v2}, disposition="opposite")
 
     # REQ-DEMO-04: 10 valid ColorTriple faces

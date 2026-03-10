@@ -8,7 +8,7 @@ The Python package exists to hide this table from the user.
 |  | **OWL** | **SHACL** |
 |---|---|---|
 | **Topological** | `KC:Element` base class; `KC:Vertex`, `KC:Edge`, `KC:Face` as subclasses. `KC:Edge` has exactly 2 `boundedBy` (Vertex); `KC:Face` has exactly 3 `boundedBy` (Edge). `KC:Complex` as collection of elements via `KC:hasElement`. | Boundary vertices are distinct; boundary edges of a face form a closed triangle; boundary-closure of a complex (all instance-level; requires `sh:sparql`) |
-| **Ontological** | Concrete subclasses and their allowed attributes (`Relationship` with `disposition`; `ColorTriple` with `pattern`); property domain/range declarations | Controlled vocabulary enforcement (`disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
+| **Ontological** | Concrete subclasses and their allowed attributes (`ColorPair` with `disposition`; `ColorTriple` with `pattern`); property domain/range declarations | Controlled vocabulary enforcement (e.g. `disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
 
 ### Why Both OWL and SHACL at Each Layer
 
@@ -36,7 +36,7 @@ enumerating individuals, which is inappropriate for string-valued attributes.
 ├─────────────────────────────────────────────────────┤
 │          Model Family  (models/mtg/)                │
 │  build_mtg_schema()    |  SPARQL templates          │
-│  Color, Relationship, ColorTriple definitions       │
+│  Color, ColorPair, ColorTriple definitions           │
 ├─────────────────────────────────────────────────────┤
 │              kc Python Package  (kc/)               │
 │  SchemaBuilder DSL     |  KnowledgeComplex I/O      │
@@ -121,7 +121,7 @@ tier above it.
 | Tier | Scope | Examples | Owner | Mechanism |
 |---|---|---|---|---|
 | 1. Structural | Core topological classes and properties | `kc:Element`, `kc:Vertex`, `kc:boundedBy`, `kc:hasElement` | Core (static OWL) | Fixed in `kc_core.ttl`; never modified |
-| 2. Type | Domain-specific classes extending core types | `mtg:Color`, `mtg:Relationship`, `mtg:ColorTriple` | Model (authored via SchemaBuilder) | `add_*_type()` generates OWL subclasses |
+| 2. Type | Domain-specific classes extending core types | `mtg:Color`, `mtg:ColorPair`, `mtg:ColorTriple` | Model (authored via SchemaBuilder) | `add_*_type()` generates OWL subclasses |
 | 3. Value | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"ooa"`, `"oaa"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
 
 A model family adds type terms (tier 2) that subclass structural terms (tier 1), and adds
@@ -152,7 +152,7 @@ Some constraints cannot be expressed in SHACL and are enforced by the Python API
 
 ### DD1: Attributes over Subclasses for the MTG Demo
 
-The MTG demo uses a single concrete edge type (`Relationship`) with a controlled-vocabulary
+The MTG demo uses a single concrete edge type (`ColorPair`) with a controlled-vocabulary
 attribute (`disposition`) rather than two subclasses (`AllyEdge`, `EnemyEdge`). Similarly,
 `ColorTriple` uses an attribute (`pattern`) rather than two face subclasses.
 
@@ -163,7 +163,7 @@ is visible in the data *before* it is promoted to a schema-level concern.
 
 **Implication:** The `Person` horizon example (WP5 step 6) motivates the subclass path — a
 `Person` vertex type needs `PersonColorAffinity` edges that carry different attributes than
-`Relationship` edges, requiring a new concrete subclass.
+`ColorPair` edges, requiring a new concrete subclass.
 
 ### DD2: SPARQL Templates, Not Free Queries
 

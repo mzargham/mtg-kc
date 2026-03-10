@@ -160,11 +160,11 @@ string substitution with named `{placeholder}` tokens.
 The demo instance SHALL contain exactly 5 `Color` vertices: White, Blue, Black, Red, Green.
 
 ### REQ-DEMO-02
-The demo instance SHALL contain exactly 5 `Relationship` edges with `disposition = "adjacent"`,
+The demo instance SHALL contain exactly 5 `ColorPair` edges with `disposition = "adjacent"`,
 corresponding to the pentagon adjacency: W-U, U-B, B-R, R-G, G-W.
 
 ### REQ-DEMO-03
-The demo instance SHALL contain exactly 5 `Relationship` edges with `disposition = "opposite"`,
+The demo instance SHALL contain exactly 5 `ColorPair` edges with `disposition = "opposite"`,
 corresponding to the pentagon diagonals: W-B, W-R, U-G, U-R, B-G.
 
 ### REQ-DEMO-04

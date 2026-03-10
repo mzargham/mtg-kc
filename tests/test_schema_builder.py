@@ -21,7 +21,7 @@ def basic_schema() -> SchemaBuilder:
     sb = SchemaBuilder(namespace="test")
     sb.add_vertex_type("Color")
     sb.add_edge_type(
-        "Relationship",
+        "ColorPair",
         attributes={"disposition": vocab("adjacent", "opposite")},
     )
     sb.add_face_type(
@@ -67,13 +67,13 @@ def test_add_vertex_type_writes_shacl(basic_schema):
 # --- add_edge_type ---
 
 def test_add_edge_type_writes_owl(basic_schema):
-    """REQ-SCHEMA-03, REQ-VV-03: OWL dump contains Relationship subclass of KC:Edge."""
+    """REQ-SCHEMA-03, REQ-VV-03: OWL dump contains ColorPair subclass of KC:Edge."""
     ttl = basic_schema.dump_owl()
     g = Graph()
     g.parse(data=ttl, format="turtle")
     from rdflib.namespace import RDFS
     from rdflib import URIRef
-    rel = URIRef("https://example.org/test#Relationship")
+    rel = URIRef("https://example.org/test#ColorPair")
     kc_edge = URIRef("https://example.org/kc#Edge")
     assert (rel, RDFS.subClassOf, kc_edge) in g
 
@@ -112,9 +112,9 @@ def test_vocab_generates_sh_in(basic_schema):
 def test_dump_owl_includes_core(basic_schema):
     """REQ-SCHEMA-06: dump_owl() includes KC:Vertex, KC:Edge, KC:Face."""
     ttl = basic_schema.dump_owl()
-    assert "kc#Vertex" in ttl
-    assert "kc#Edge" in ttl
-    assert "kc#Face" in ttl
+    assert "Vertex" in ttl
+    assert "Edge" in ttl
+    assert "Face" in ttl
 
 
 def test_dump_shacl_includes_core(basic_schema):

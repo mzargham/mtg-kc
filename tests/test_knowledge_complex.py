@@ -18,10 +18,10 @@ from models.mtg import QUERIES_DIR
 
 @pytest.fixture
 def schema() -> SchemaBuilder:
-    sb = SchemaBuilder(namespace="test")
+    sb = SchemaBuilder(namespace="mtg")
     sb.add_vertex_type("Color")
     sb.add_edge_type(
-        "Relationship",
+        "ColorPair",
         attributes={"disposition": vocab("adjacent", "opposite")},
     )
     sb.add_face_type(
@@ -38,9 +38,9 @@ def minimal_kc(schema) -> KnowledgeComplex:
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     kc.add_vertex("Black", type="Color")
-    kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},  disposition="adjacent")
-    kc.add_edge("UB", type="Relationship", vertices={"Blue", "Black"}, disposition="opposite")
-    kc.add_edge("WB", type="Relationship", vertices={"White", "Black"}, disposition="opposite")
+    kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},  disposition="adjacent")
+    kc.add_edge("UB", type="ColorPair", vertices={"Blue", "Black"}, disposition="opposite")
+    kc.add_edge("WB", type="ColorPair", vertices={"White", "Black"}, disposition="opposite")
     kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
     return kc
 
@@ -67,7 +67,7 @@ def test_add_edge_valid(schema):
     kc = KnowledgeComplex(schema=schema)
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
-    kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+    kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},
                 disposition="adjacent")
 
 
@@ -77,7 +77,7 @@ def test_add_edge_invalid_disposition(schema):
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     with pytest.raises(ValidationError):
-        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+        kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},
                     disposition="invalid_value")
 
 
@@ -93,9 +93,9 @@ def test_add_face_open_triangle_fails(schema):
     kc = KnowledgeComplex(schema=schema)
     for v in ["W", "U", "B", "R"]:
         kc.add_vertex(v, type="Color")
-    kc.add_edge("WU", type="Relationship", vertices={"W", "U"}, disposition="adjacent")
-    kc.add_edge("UB", type="Relationship", vertices={"U", "B"}, disposition="adjacent")
-    kc.add_edge("WR", type="Relationship", vertices={"W", "R"}, disposition="opposite")
+    kc.add_edge("WU", type="ColorPair", vertices={"W", "U"}, disposition="adjacent")
+    kc.add_edge("UB", type="ColorPair", vertices={"U", "B"}, disposition="adjacent")
+    kc.add_edge("WR", type="ColorPair", vertices={"W", "R"}, disposition="opposite")
     # WU, UB, WR do not form a closed triangle
     with pytest.raises(ValidationError):
         kc.add_face("bad", type="ColorTriple", boundary=["WU", "UB", "WR"])
@@ -123,7 +123,7 @@ def test_add_edge_before_vertices_fails(schema):
     kc = KnowledgeComplex(schema=schema)
     # Do NOT add vertices first — edge's boundary vertices are not in the complex
     with pytest.raises(ValidationError):
-        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+        kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},
                     disposition="adjacent")
 
 
@@ -135,7 +135,7 @@ def test_validation_error_has_report(schema):
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     try:
-        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+        kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"},
                     disposition="INVALID")
     except ValidationError as e:
         assert isinstance(e.report, str)

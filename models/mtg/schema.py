@@ -3,7 +3,7 @@ models.mtg.schema — MTG color wheel schema definition.
 
 Defines the domain-specific types for the MTG knowledge complex:
 - Color (vertex type)
-- Relationship (edge type) with disposition ∈ {adjacent, opposite}
+- ColorPair (edge type) with disposition ∈ {adjacent, opposite}
 - ColorTriple (face type) with optional pattern ∈ {ooa, oaa}
 """
 
@@ -15,7 +15,7 @@ def build_mtg_schema() -> SchemaBuilder:
     sb = SchemaBuilder(namespace="mtg")
     sb.add_vertex_type("Color")
     sb.add_edge_type(
-        "Relationship",
+        "ColorPair",
         attributes={"disposition": vocab("adjacent", "opposite")},
     )
     sb.add_face_type(

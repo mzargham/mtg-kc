@@ -54,12 +54,12 @@ def mtg_kc() -> KnowledgeComplex:
 
     edge_id = 0
     for pair in _ADJACENT_PAIRS:
-        kc.add_edge(f"e{edge_id}", type="Relationship",
+        kc.add_edge(f"e{edge_id}", type="ColorPair",
                     vertices=pair, disposition="adjacent")
         edge_id += 1
 
     for pair in _OPPOSITE_PAIRS:
-        kc.add_edge(f"e{edge_id}", type="Relationship",
+        kc.add_edge(f"e{edge_id}", type="ColorPair",
                     vertices=pair, disposition="opposite")
         edge_id += 1
 
@@ -144,7 +144,7 @@ def test_promote_causes_validation_fail(mtg_kc):
     # use a fresh schema + instance for isolation
     sb = SchemaBuilder(namespace="mtg_promote")
     sb.add_vertex_type("Color")
-    sb.add_edge_type("Relationship",
+    sb.add_edge_type("ColorPair",
                      attributes={"disposition": vocab("adjacent", "opposite")})
     sb.add_face_type("ColorTriple",
                      attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})

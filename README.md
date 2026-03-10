@@ -26,7 +26,7 @@ kc/                          # Layer 1: generic KC framework (like numpy)
 
 models/
   mtg/                       # Layer 2: MTG domain model (like scipy)
-    schema.py                #   MTG schema definition (Color, Relationship, ColorTriple)
+    schema.py                #   MTG schema definition (Color, ColorPair, ColorTriple)
     queries/
       edges_by_disposition.sparql
       faces_by_edge_pattern.sparql
@@ -80,7 +80,7 @@ kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
 # Layer 3: concrete data
 kc.add_vertex("White", type="Color")
 kc.add_vertex("Blue",  type="Color")
-kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"}, disposition="adjacent")
+kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"}, disposition="adjacent")
 # ... add remaining vertices, edges, faces
 # add_face triggers SHACL validation on write
 

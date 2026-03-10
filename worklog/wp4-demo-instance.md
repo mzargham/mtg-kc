@@ -7,7 +7,7 @@
 Complete the MTG color pentagon instance in `demo/demo_instance.py`:
 
 - 5 `Color` vertices already defined (White, Blue, Black, Red, Green)
-- 10 `Relationship` edges already defined (5 adjacent, 5 opposite)
+- 10 `ColorPair` edges already defined (5 adjacent, 5 opposite)
 - **Remaining:** 10 `ColorTriple` faces — one per valid triangle in the complete pentagon graph
 - No `pattern` attribute asserted on any face (discovery via SPARQL only)
 - Un-skip tests in `tests/test_mtg_demo.py`
