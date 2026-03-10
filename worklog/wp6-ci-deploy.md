@@ -21,15 +21,14 @@ Set up GitHub Actions for continuous deployment of the Marimo notebook to GitHub
 2. Under "Build and deployment", set Source to **"GitHub Actions"**
 3. Save — the workflow handles everything else
 
-## Quality Criteria
+## Quality Criteria (human review)
 
-- [ ] `.github/workflows/deploy.yml` exists and follows the hc-marimo pattern
-- [ ] Workflow triggers on push to main
-- [ ] `marimo export html-wasm demo/demo.py` runs successfully in CI
-- [ ] Notebook is accessible at `https://mzargham.github.io/mtg-kc/`
-- [ ] (Optional) pytest runs as a prerequisite to deploy
+- [ ] Is deploy-on-push-to-main the workflow you want? (vs. manual-only, or tag-based releases)
+- [ ] Should pytest run as a gate before deploy, or is that overkill for this project?
+- [ ] Is the notebook the right thing to publish to Pages, or should it be something else?
+- [ ] Is `--mode run` (read-only interactive) the right mode, or do you want `--mode edit`?
 
-## Verification
+## Verification (machine — Claude runs these)
 
 ```bash
 # Local smoke test of the export command
@@ -42,7 +41,7 @@ gh run list --workflow=deploy.yml --limit=1
 gh api repos/mzargham/mtg-kc/pages
 ```
 
-Expected: workflow green, pages live.
+Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`.
 
 ## Changelog
 

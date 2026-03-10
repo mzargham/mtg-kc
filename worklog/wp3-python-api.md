@@ -28,35 +28,24 @@ Implement all `NotImplementedError` stubs in the two core modules:
 
 Tests are already written (TDD): `tests/test_schema_builder.py`, `tests/test_knowledge_complex.py`.
 
-## Quality Criteria
+## Quality Criteria (human review)
 
-- [ ] REQ-SCHEMA-01: SchemaBuilder accepts namespace parameter
-- [ ] REQ-SCHEMA-02: `add_vertex_type` writes to both OWL and SHACL (H3)
-- [ ] REQ-SCHEMA-03: `add_edge_type` writes to both OWL and SHACL (H3)
-- [ ] REQ-SCHEMA-04: `add_face_type` with `required=False` generates `sh:minCount 0`
-- [ ] REQ-SCHEMA-05: `vocab()` generates OWL annotation + SHACL `sh:in`
-- [ ] REQ-SCHEMA-06: `dump_owl()` returns valid merged Turtle
-- [ ] REQ-SCHEMA-07: `dump_shacl()` returns valid merged Turtle
-- [ ] REQ-SCHEMA-08: `promote_to_attribute` atomically updates both OWL and SHACL (H3)
-- [ ] REQ-SCHEMA-09: No rdflib/pyshacl/owlrl in public API (H6)
-- [ ] REQ-GRAPH-01: KnowledgeComplex initializes with merged schema
-- [ ] REQ-GRAPH-02: `add_vertex` validates on write
-- [ ] REQ-GRAPH-03: `add_edge` links vertices and validates
-- [ ] REQ-GRAPH-04: `add_face` validates including closed-triangle (H4)
-- [ ] REQ-GRAPH-05: `ValidationError` includes SHACL report text
-- [ ] REQ-GRAPH-06: `query()` returns DataFrame
-- [ ] REQ-GRAPH-07: `query()` rejects unknown templates
-- [ ] REQ-GRAPH-08: `dump_graph()` returns valid Turtle
-- [ ] REQ-GRAPH-09: No rdflib/pyshacl/owlrl in public API (H6)
-- [ ] REQ-QUERY-01 through REQ-QUERY-04: Named SPARQL templates work correctly
+- [ ] Does the `SchemaBuilder` API surface feel right? (`add_vertex_type`, `add_edge_type`, `add_face_type`, `promote_to_attribute`)
+- [ ] Does the `KnowledgeComplex` API surface feel right? (`add_vertex`, `add_edge`, `add_face`, `query`, `dump_graph`)
+- [ ] Is validation-on-write the behavior you want, or should validation be explicit/deferred?
+- [ ] Are the error messages in `ValidationError` reports useful and readable to a human?
+- [ ] Does `promote_to_attribute` capture the workflow you envision for evolving a schema?
+- [ ] Is the named-template-only query restriction (no ad-hoc SPARQL) the right call for this project?
 
-## Verification
+## Verification (machine — Claude runs these)
 
 ```bash
 pytest tests/test_schema_builder.py tests/test_knowledge_complex.py -v
 ```
 
 Expected: all tests pass.
+
+Requirements covered by tests: REQ-SCHEMA-01 through REQ-SCHEMA-09, REQ-GRAPH-01 through REQ-GRAPH-09, REQ-QUERY-01 through REQ-QUERY-04, H3, H4, H6.
 
 ## Changelog
 

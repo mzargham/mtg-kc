@@ -14,24 +14,28 @@ Implement cells 2-6 in `demo/demo.py` to complete the narrative arc:
 6. **Horizon** — Person vertex type stub motivating next work
 7. References & Acknowledgements (Cell 7) — already implemented
 
-## Quality Criteria
+## Quality Criteria (human review)
 
-- [ ] Full narrative arc runs end-to-end without error
-- [ ] H1: All four cells of the 2x2 map demonstrated
-- [ ] H2: Closed-triangle constraint visible in SHACL dump, OWL limit noted
-- [ ] H3: `promote_to_attribute` shown producing changes in both OWL and SHACL
-- [ ] H4: SHACL catches malformed face and shows readable report
-- [ ] H5: SPARQL discovers ooa/oaa split without pre-assertion
-- [ ] H6: Notebook never imports rdflib, pyshacl, or owlrl directly
-- [ ] Graph visualization renders with edges colored by disposition
+- [ ] Does the narrative arc tell the story you want to tell?
+- [ ] Is the visualization clear and does it convey the pentagon structure intuitively?
+- [ ] Does the discovery → promotion sequence land as a compelling demonstration?
+- [ ] Is the "horizon" cell (Person vertex type) the right teaser for future work?
+- [ ] Is the tone and exposition appropriate for the intended audience?
+- [ ] Do the OWL/SHACL dumps shown in the notebook aid understanding or just add noise?
 
-## Verification
+## Verification (machine — Claude runs these)
 
 ```bash
+# Notebook executes without error
 marimo run demo/demo.py
+
+# H6 check: no forbidden imports
+grep -E "^(from|import) (rdflib|pyshacl|owlrl)" demo/demo.py
 ```
 
-Expected: notebook opens in browser, all cells execute, visualizations render.
+Expected: notebook opens in browser, all cells execute, visualizations render. Grep returns no matches.
+
+Requirements covered by tests/checks: H1 through H6.
 
 ## Changelog
 

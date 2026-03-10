@@ -21,14 +21,14 @@ Also:
 - Fix all imports in test files and demo files to use `kc.*` package paths
 - Ensure `kc/resources/` and `kc/queries/` are included as package data
 
-## Quality Criteria
+## Quality Criteria (human review)
 
-- [ ] All files are in the locations described in README.md
-- [ ] `pytest tests/test_core_owl.py tests/test_core_shacl.py -v` passes (the two currently-passing test suites)
-- [ ] `python -c "from kc import SchemaBuilder, KnowledgeComplex"` imports without error
-- [ ] No stale files left at the root (only README.md, pyproject.toml, .gitignore, and directories)
+- [ ] Does the directory layout match your mental model of the project?
+- [ ] Are there files that should live elsewhere (e.g., should `references/` be under `docs/`)?
+- [ ] Is the package name `kc` still the right name for imports?
+- [ ] Does the root directory feel clean — only config files and top-level directories?
 
-## Verification
+## Verification (machine — Claude runs these)
 
 ```bash
 # Structure check
@@ -37,9 +37,14 @@ ls kc/ kc/resources/ kc/queries/ tests/ demo/ docs/
 # Import check
 python -c "from kc import SchemaBuilder, KnowledgeComplex, ValidationError"
 
-# Test check
+# Test check (currently-passing suites still pass)
 pytest tests/test_core_owl.py tests/test_core_shacl.py -v
+
+# No stale .py/.ttl/.sparql files at root
+ls *.py *.ttl *.sparql 2>&1 | grep -c "No such file"
 ```
+
+Requirements verified by tests: all currently-passing tests remain green after reorg.
 
 ## Changelog
 
