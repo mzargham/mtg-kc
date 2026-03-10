@@ -142,3 +142,22 @@ Adding a new vertex type creates demand for:
 This is the natural growth path of a knowledge complex.
 The framework supports it: each new `add_*_type` call updates OWL + SHACL atomically.
 """)
+
+# ============================================================
+# Cell 7: References & Acknowledgements
+# ============================================================
+
+_references_cell = mo.md("""
+## References & Acknowledgements
+
+This project uses the five Magic: The Gathering colors as its test case.
+The philosophical framework for the color wheel is drawn from the following source,
+which we gratefully acknowledge:
+
+- **"The MTG Color Wheel (& Humanity)"** by Homo Sabiens
+  - Original: [https://homosabiens.substack.com/p/the-mtg-color-wheel](https://homosabiens.substack.com/p/the-mtg-color-wheel)
+  - Local copy: [`references/the-mtg-color-wheel.md`](../references/the-mtg-color-wheel.md)
+
+The local copy is maintained for convenient reference.
+All credit for the color wheel analysis belongs to the original author.
+""")

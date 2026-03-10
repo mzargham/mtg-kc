@@ -87,6 +87,16 @@ pytest tests/ -v
 marimo run demo/demo.py
 ```
 
+## References & Acknowledgements
+
+This project uses the five Magic: The Gathering colors as its test case. The philosophical framework for the color wheel is drawn from the following source, which we gratefully acknowledge:
+
+- **"The MTG Color Wheel (& Humanity)"** by Homo Sabiens
+  - Original: <https://homosabiens.substack.com/p/the-mtg-color-wheel>
+  - Local copy: [`references/the-mtg-color-wheel.md`](references/the-mtg-color-wheel.md)
+
+The local copy is maintained for convenient reference. All credit for the color wheel analysis belongs to the original author.
+
 ## See Also
 
 - `docs/PLAN.md` — work packages, sequence, review gates
