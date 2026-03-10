@@ -30,4 +30,4 @@ testpaths = ["tests"]
 addopts = "-v --tb=short"
 
 [tool.hatch.build.targets.wheel]
-packages = ["kc"]
+packages = ["kc", "models"]

@@ -13,6 +13,7 @@ import pandas as pd
 from kc.schema import SchemaBuilder, vocab
 from kc.graph import KnowledgeComplex
 from kc.exceptions import ValidationError
+from models.mtg import build_mtg_schema, QUERIES_DIR
 
 
 # MTG pentagon adjacency and opposition (undirected, represented as sorted pairs)
@@ -44,17 +45,8 @@ _FACE_PATTERNS: dict[frozenset, str] = {
 @pytest.fixture(scope="module")
 def mtg_kc() -> KnowledgeComplex:
     """Full MTG demo instance (no pattern attributes asserted)."""
-    sb = SchemaBuilder(namespace="mtg")
-    sb.add_vertex_type("Color")
-    sb.add_edge_type(
-        "Relationship",
-        attributes={"disposition": vocab("adjacent", "opposite")},
-    )
-    sb.add_face_type(
-        "ColorTriple",
-        attributes={"pattern": vocab("ooa", "oaa"), "required": False},
-    )
-    kc = KnowledgeComplex(schema=sb)
+    sb = build_mtg_schema()
+    kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
 
     colors = ["White", "Blue", "Black", "Red", "Green"]
     for c in colors:

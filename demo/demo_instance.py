@@ -2,32 +2,28 @@
 demo/demo_instance.py
 
 MTG color pentagon knowledge complex — full instance construction.
+Layer 3: concrete data built using the models.mtg schema (layer 2)
+and the kc framework (layer 1).
+
 Authored in WP4. Returns a ready-to-use KnowledgeComplex for the Marimo notebook.
 
 REQ-DEMO-01 through REQ-DEMO-05.
 """
 
-from kc.schema import SchemaBuilder, vocab
+from kc.schema import SchemaBuilder
 from kc.graph import KnowledgeComplex
+from models.mtg import build_mtg_schema, QUERIES_DIR
 
 
-def build_mtg_schema() -> SchemaBuilder:
-    sb = SchemaBuilder(namespace="mtg")
-    sb.add_vertex_type("Color")
-    sb.add_edge_type(
-        "Relationship",
-        attributes={"disposition": vocab("adjacent", "opposite")},
-    )
-    sb.add_face_type(
-        "ColorTriple",
-        # pattern is optional here — to be discovered, not pre-asserted (REQ-DEMO-05)
-        attributes={"pattern": vocab("ooa", "oaa"), "required": False},
-    )
-    return sb
+def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
+    """Build the MTG color pentagon instance.
 
+    If no schema is provided, builds one from models.mtg.
+    """
+    if schema is None:
+        schema = build_mtg_schema()
 
-def build_mtg_instance(schema: SchemaBuilder) -> KnowledgeComplex:
-    kc = KnowledgeComplex(schema=schema)
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
 
     # REQ-DEMO-01: 5 Color vertices
     for color in ["White", "Blue", "Black", "Red", "Green"]:
@@ -77,6 +73,5 @@ def build_mtg_instance(schema: SchemaBuilder) -> KnowledgeComplex:
 
 
 if __name__ == "__main__":
-    sb = build_mtg_schema()
-    kc = build_mtg_instance(sb)
+    kc = build_mtg_instance()
     print(kc.dump_graph())

@@ -10,33 +10,45 @@ A demonstrator, not production code. End-to-end, fully working, but scoped to va
 
 ## Repository Layout
 
+Three layers, designed for future separation:
+
 ```
-kc/
+kc/                          # Layer 1: generic KC framework (like numpy)
   resources/
-    kc_core.ttl            # abstract OWL ontology (topological backbone)
-    kc_core_shapes.ttl     # abstract SHACL shapes (topological constraints)
+    kc_core.ttl              #   abstract OWL ontology (topological backbone)
+    kc_core_shapes.ttl       #   abstract SHACL shapes (topological constraints)
   queries/
-    *.sparql               # named query templates (not user-facing)
-  schema.py                # SchemaBuilder — type and rule authoring API
-  graph.py                 # KnowledgeComplex — instance I/O API
-  exceptions.py            # ValidationError and friends
+    vertices.sparql          #   generic query templates
+  schema.py                  #   SchemaBuilder — type and rule authoring API
+  graph.py                   #   KnowledgeComplex — instance I/O API
+  exceptions.py              #   ValidationError and friends
   __init__.py
 
+models/
+  mtg/                       # Layer 2: MTG domain model (like scipy)
+    schema.py                #   MTG schema definition (Color, Relationship, ColorTriple)
+    queries/
+      edges_by_disposition.sparql
+      faces_by_edge_pattern.sparql
+    __init__.py
+
+demo/                        # Layer 3: concrete instance + notebook
+  demo_instance.py           #   MTG color pentagon (5 colors, 10 edges, 10 faces)
+  demo.py                    #   marimo notebook
+
 tests/
-  requirements.md          # explicit requirements driving all tests
   test_core_owl.py
   test_core_shacl.py
   test_schema_builder.py
   test_knowledge_complex.py
+  test_mtg_demo.py
 
 docs/
-  PLAN.md                  # project plan with work packages and gates
-  ARCHITECTURE.md          # 2x2 responsibility map and design decisions
-  REQUIREMENTS.md          # full requirements document
+  PLAN.md                    # project plan with work packages and gates
+  ARCHITECTURE.md            # 2x2 responsibility map and design decisions
+  REQUIREMENTS.md            # full requirements document
 
-demo/
-  demo_instance.py         # MTG color pentagon instantiation script
-  demo.py                  # marimo notebook
+references/                  # reference materials (e.g. source articles)
 
 pyproject.toml
 ```
@@ -56,16 +68,16 @@ pandas = ">=2.0"
 ## Usage Sketch
 
 ```python
-from kc.schema import SchemaBuilder, vocab
+# Layer 2: domain model defines types and queries
+from models.mtg import build_mtg_schema, QUERIES_DIR
 
-sb = SchemaBuilder(namespace="mtg")
-sb.add_vertex_type("Color")
-sb.add_edge_type("Relationship", attributes={"disposition": vocab("adjacent", "opposite")})
-sb.add_face_type("ColorTriple", attributes={"pattern": vocab("ooa", "oaa"), "required": False})
-
+# Layer 1: generic framework
 from kc.graph import KnowledgeComplex
 
-kc = KnowledgeComplex(schema=sb)
+sb = build_mtg_schema()
+kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
+
+# Layer 3: concrete data
 kc.add_vertex("White", type="Color")
 kc.add_vertex("Blue",  type="Color")
 kc.add_edge("WU", type="Relationship", source="White", target="Blue", disposition="adjacent")

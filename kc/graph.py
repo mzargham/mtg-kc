@@ -4,7 +4,9 @@ kc.graph — KnowledgeComplex instance I/O.
 Public API. Never exposes rdflib, pyshacl, or owlrl objects.
 
 SHACL validation is run on every write (add_vertex, add_edge, add_face).
-SPARQL queries are encapsulated as named templates in kc/queries/.
+SPARQL queries are encapsulated as named templates. The framework provides
+generic queries in kc/queries/; domain models can supply additional query
+directories via the query_dirs parameter.
 """
 
 from __future__ import annotations
@@ -16,18 +18,24 @@ import pandas as pd
 from kc.exceptions import ValidationError, UnknownQueryError
 from kc.schema import SchemaBuilder
 
-_QUERIES_DIR = Path(__file__).parent / "queries"
+_FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
 
 
-def _load_query_templates() -> dict[str, str]:
-    """Load all .sparql files from kc/queries/ into a name -> template string dict."""
-    templates = {}
-    for path in _QUERIES_DIR.glob("*.sparql"):
-        templates[path.stem] = path.read_text()
+def _load_query_templates(
+    extra_dirs: list[Path] | None = None,
+) -> dict[str, str]:
+    """Load .sparql files from framework queries dir and any extra directories.
+
+    Extra directories (e.g. from domain models) are loaded after the framework
+    queries. If a model provides a query with the same name as a framework query,
+    the model's version takes precedence.
+    """
+    templates: dict[str, str] = {}
+    dirs = [_FRAMEWORK_QUERIES_DIR] + (extra_dirs or [])
+    for d in dirs:
+        for path in d.glob("*.sparql"):
+            templates[path.stem] = path.read_text()
     return templates
-
-
-_QUERY_TEMPLATES: dict[str, str] = _load_query_templates()
 
 
 class KnowledgeComplex:
@@ -39,10 +47,14 @@ class KnowledgeComplex:
     schema : SchemaBuilder
         A fully configured schema. The merged OWL + SHACL is loaded into
         the internal graph at construction time.
+    query_dirs : list[Path], optional
+        Additional directories containing .sparql query templates
+        (e.g. from domain models). Merged with the framework's built-in queries.
 
     Example
     -------
-    >>> kc = KnowledgeComplex(schema=sb)
+    >>> from models.mtg import build_mtg_schema, QUERIES_DIR
+    >>> kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
     >>> kc.add_vertex("White", type="Color")
     >>> kc.add_edge("WU", type="Relationship",
     ...             source="White", target="Blue", disposition="adjacent")
@@ -50,8 +62,13 @@ class KnowledgeComplex:
     >>> df = kc.query("faces_by_edge_pattern")
     """
 
-    def __init__(self, schema: SchemaBuilder) -> None:
+    def __init__(
+        self,
+        schema: SchemaBuilder,
+        query_dirs: list[Path] | None = None,
+    ) -> None:
         self._schema = schema
+        self._query_templates = _load_query_templates(extra_dirs=query_dirs)
         self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
         self._init_graph()
 
@@ -184,7 +201,8 @@ class KnowledgeComplex:
         Parameters
         ----------
         template_name : str
-            Name of a registered query template (filename stem in kc/queries/).
+            Name of a registered query template (filename stem from
+            framework or model query directories).
         **kwargs : Any
             Substitution values for {placeholder} tokens in the template.
 
@@ -198,10 +216,10 @@ class KnowledgeComplex:
         UnknownQueryError
             If template_name is not registered.
         """
-        if template_name not in _QUERY_TEMPLATES:
+        if template_name not in self._query_templates:
             raise UnknownQueryError(
                 f"No query template named '{template_name}'. "
-                f"Available: {sorted(_QUERY_TEMPLATES)}"
+                f"Available: {sorted(self._query_templates)}"
             )
         # TODO (WP3): substitute kwargs, execute via rdflib, return DataFrame
         raise NotImplementedError

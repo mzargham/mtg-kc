@@ -13,6 +13,7 @@ import pandas as pd
 from kc.schema import SchemaBuilder, vocab
 from kc.graph import KnowledgeComplex
 from kc.exceptions import ValidationError, UnknownQueryError
+from models.mtg import QUERIES_DIR
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def schema() -> SchemaBuilder:
 @pytest.fixture
 def minimal_kc(schema) -> KnowledgeComplex:
     """3-vertex, 3-edge, 1-face valid closed triangle."""
-    kc = KnowledgeComplex(schema=schema)
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     kc.add_vertex("Black", type="Color")

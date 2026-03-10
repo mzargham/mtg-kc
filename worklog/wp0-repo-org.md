@@ -1,6 +1,6 @@
 # WP0 — Repository Organization
 
-## Status: Not Started
+## Status: Accepted
 
 ## Scope
 
@@ -50,3 +50,5 @@ Requirements verified by tests: all currently-passing tests remain green after r
 
 | Date | Change Requested | Resolution |
 |------|-----------------|------------|
+| 2026-03-10 | Initial repo reorganization | Files moved via `git mv` to `kc/`, `tests/`, `demo/`, `docs/`. uv venv created. All 10 tests pass. Imports resolve. No stale files at root. |
+| 2026-03-10 | Three-layer separation | Created `models/mtg/` (layer 2). Extracted `build_mtg_schema()` to `models/mtg/schema.py`. Moved MTG-specific queries (`edges_by_disposition`, `faces_by_edge_pattern`) from `kc/queries/` to `models/mtg/queries/`. Added `query_dirs` param to `KnowledgeComplex.__init__`. Updated tests and `demo_instance.py` to import from `models.mtg`. All 10 tests pass. |
