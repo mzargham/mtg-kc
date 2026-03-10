@@ -21,6 +21,6 @@ def build_mtg_schema() -> SchemaBuilder:
     sb.add_face_type(
         "ColorTriple",
         # pattern is optional here — to be discovered, not pre-asserted (REQ-DEMO-05)
-        attributes={"pattern": vocab("ooa", "oaa"), "required": False},
+        attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}},
     )
     return sb

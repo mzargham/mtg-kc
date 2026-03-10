@@ -116,6 +116,12 @@ class KnowledgeComplex:
         Validates both element-level shapes (EdgeShape, FaceShape) and
         complex-level shapes (ComplexShape boundary-closure).
 
+        Multiple shapes may report violations for the same structural issue.
+        For example, adding an edge before its boundary vertices are in the
+        complex triggers both EdgeShape (boundary must be kc:Vertex individuals)
+        and ComplexShape (boundary elements must be complex members). The
+        ValidationError.report includes all violations — this is intentional.
+
         Parameters
         ----------
         focus_node_id : str, optional
@@ -156,6 +162,8 @@ class KnowledgeComplex:
             If SHACL validation fails after assertion.
         """
         # TODO (WP3):
+        #   0. Check type is registered in schema._types (Python-side guard;
+        #      SHACL cannot catch unregistered types — see ARCHITECTURE.md)
         #   1. Assert (id_iri, RDF.type, type_iri) in instance graph
         #   2. Assert any attributes as data properties
         #   3. Assert (_complex_iri, KC.hasElement, id_iri)
@@ -203,6 +211,7 @@ class KnowledgeComplex:
         if len(vertices) != 2:
             raise ValueError(f"add_edge requires exactly 2 vertices; got {len(vertices)}")
         # TODO (WP3):
+        #   0. Check type is registered in schema._types (Python-side guard)
         #   1. Assert (id_iri, RDF.type, type_iri)
         #   2. Assert (id_iri, KC.boundedBy, v_iri) for each vertex
         #   3. Assert any attributes as data properties
@@ -250,6 +259,7 @@ class KnowledgeComplex:
         if len(boundary) != 3:
             raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
         # TODO (WP3):
+        #   0. Check type is registered in schema._types (Python-side guard)
         #   1. Assert (id_iri, RDF.type, type_iri)
         #   2. Assert (id_iri, KC.boundedBy, e_iri) for each edge
         #   3. Assert any attributes as data properties

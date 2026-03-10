@@ -26,7 +26,7 @@ def schema() -> SchemaBuilder:
     )
     sb.add_face_type(
         "ColorTriple",
-        attributes={"pattern": vocab("ooa", "oaa"), "required": False},
+        attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}},
     )
     return sb
 
@@ -111,11 +111,14 @@ def test_add_face_wrong_count_raises(schema):
 # --- boundary-closure (ComplexShape) ---
 
 def test_add_edge_before_vertices_fails(schema):
-    """ComplexShape: adding an edge before its boundary vertices raises ValidationError.
+    """ComplexShape + EdgeShape: adding an edge before its boundary vertices raises ValidationError.
 
     Boundary-closure requires that all boundary elements of a simplex are
     already members of the complex. Adding an edge whose vertices haven't
-    been added yet violates this constraint.
+    been added yet violates this constraint. Both EdgeShape (boundary must
+    be kc:Vertex individuals) and ComplexShape (boundary elements must be
+    complex members) may fire — the ValidationError.report includes all
+    violations.
     """
     kc = KnowledgeComplex(schema=schema)
     # Do NOT add vertices first — edge's boundary vertices are not in the complex

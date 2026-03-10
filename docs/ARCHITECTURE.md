@@ -30,12 +30,17 @@ enumerating individuals, which is inappropriate for string-valued attributes.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  User / Notebook                    │
-│  SchemaBuilder DSL   |   KnowledgeComplex I/O       │
+│              Demo / Notebook  (demo/)                │
+│  build_mtg_instance()  |  Marimo cells              │
+│  Concrete elements: vertices, edges, faces          │
 ├─────────────────────────────────────────────────────┤
-│              kc Python Package                      │
-│  schema.py           |   graph.py                  │
-│  (OWL + SHACL emit)  |   (rdflib graph + SPARQL)   │
+│          Model Family  (models/mtg/)                │
+│  build_mtg_schema()    |  SPARQL templates          │
+│  Color, Relationship, ColorTriple definitions       │
+├─────────────────────────────────────────────────────┤
+│              kc Python Package  (kc/)               │
+│  SchemaBuilder DSL     |  KnowledgeComplex I/O      │
+│  (OWL + SHACL emit)   |  (rdflib graph + SPARQL)   │
 ├──────────────────────┬──────────────────────────────┤
 │  kc_core.ttl         │  kc_core_shapes.ttl          │
 │  (abstract OWL)      │  (abstract SHACL)            │
@@ -44,8 +49,102 @@ enumerating individuals, which is inappropriate for string-valued attributes.
 └─────────────────────────────────────────────────────┘
 ```
 
+The **model family** layer (`models/mtg/`) sits between the core framework and the demo.
+It defines domain-specific types and queries using the core's `SchemaBuilder` DSL — analogous
+to defining a dataclass or ML model class. The demo layer then instantiates that model with
+concrete data.
+
 The static resources (`kc_core.ttl`, `kc_core_shapes.ttl`) are loaded once at package import.
-User schema and shapes are merged into the same rdflib `Graph` objects at runtime.
+Model schema and shapes are merged into the same rdflib `Graph` objects at runtime.
+
+---
+
+## Abstraction Boundary: Core vs. Model Families
+
+The four implementation layers in the diagram above are separated by a key abstraction
+boundary: the **core framework** (kc/) vs. **model families** (models/{name}/). Everything
+below the boundary (core package, static resources, libraries) is framework-owned and
+invariant. Everything above (model definitions, demo instances) is user-authored. The
+Python package exists so users interact only with the model layer's Pythonic interface,
+never with OWL/SHACL/SPARQL directly.
+
+### Core Framework (`kc/`, prefixes `kc:` and `kcs:`)
+
+- **Topological rule enforcement.** The Element/Vertex/Edge/Face hierarchy, cardinality
+  axioms, distinctness, closed-triangle, and boundary-closure constraints. These are
+  static OWL and SHACL shipped with the package (DD4). Users cannot modify them.
+- **Ontological rule authoring.** `SchemaBuilder` provides the DSL for declaring types,
+  attributes, and vocabularies. It *generates* OWL classes and SHACL shapes on behalf
+  of the model but does not itself define any domain types.
+- **Instance management.** `KnowledgeComplex` loads the merged schema, manages the RDF
+  graph, validates on every write (DD3), and executes named SPARQL queries (DD2).
+- **Framework queries.** Generic SPARQL templates (`vertices`, `coboundary`) that work
+  for any model family.
+
+### Model Families (`models/{name}/`, prefixes `{name}:` and `{name}s:`)
+
+- **Ontological rule enforcement.** The concrete OWL types and SHACL shapes generated
+  by calling `SchemaBuilder.add_*_type()`. These are the model's rules, authored via
+  the core's tools.
+- **Concrete complex authoring.** Instance data constructed via `KnowledgeComplex.add_*()`
+  calls. Each element must comply with both core topological rules and model ontological
+  rules.
+- **Domain queries.** Model-specific SPARQL templates (e.g. `faces_by_edge_pattern`,
+  `edges_by_disposition`).
+
+### The Type Inheritance Chain Crosses the Boundary
+
+```
+kc:Element → kc:Vertex → mtg:Color → (instance "Green")
+   core          core        model        demo/instance
+```
+
+The core owns `Element → Vertex`; the model owns `Vertex → Color`; the demo owns the
+instance `Green`. The boundary is at the subclass declaration — `add_vertex_type("Color")`
+is the model calling the core's authoring API to extend the core's type hierarchy.
+
+### Layer Ownership of the 2×2 Map
+
+|  | **OWL** | **SHACL** |
+|---|---|---|
+| **Topological** | Core owns (static `kc_core.ttl`) | Core owns (static `kc_core_shapes.ttl`) |
+| **Ontological** | Model authors via `SchemaBuilder` → core generates | Model authors via `vocab()`/attributes → core generates |
+
+Both ontological cells are *authored* by the model but *generated and managed* by the core.
+The model never touches OWL or SHACL directly.
+
+### Vocabulary Tiers
+
+The system has three tiers of controlled terms. Each tier extends but never replaces the
+tier above it.
+
+| Tier | Scope | Examples | Owner | Mechanism |
+|---|---|---|---|---|
+| 1. Structural | Core topological classes and properties | `kc:Element`, `kc:Vertex`, `kc:boundedBy`, `kc:hasElement` | Core (static OWL) | Fixed in `kc_core.ttl`; never modified |
+| 2. Type | Domain-specific classes extending core types | `mtg:Color`, `mtg:Relationship`, `mtg:ColorTriple` | Model (authored via SchemaBuilder) | `add_*_type()` generates OWL subclasses |
+| 3. Value | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"ooa"`, `"oaa"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
+
+A model family adds type terms (tier 2) that subclass structural terms (tier 1), and adds
+value terms (tier 3) that constrain attributes on those types. The core owns tier 1 and
+provides the authoring tools for tiers 2 and 3.
+
+SKOS (`skos:ConceptScheme`, `skos:Concept`) is the natural W3C formalization for making
+these vocabulary tiers machine-readable in RDF. See `docs/issues/skos-vocabularies.md`.
+
+### Python-Side Guards (Design Seam)
+
+Some constraints cannot be expressed in SHACL and are enforced by the Python API instead:
+
+- **Type registration check.** `add_vertex()`, `add_edge()`, and `add_face()` verify that
+  the `type` argument is registered in the schema's type registry *before* asserting RDF
+  triples. SHACL shapes target specific classes and pass silently on unknown types, so
+  this guard is a Python-side pre-validation step.
+
+- **Multiple shapes on a single violation.** When SHACL validation fails, multiple shapes
+  may report violations for the same structural issue. For example, adding an edge before
+  its boundary vertices are in the complex triggers both EdgeShape (boundary must be
+  `kc:Vertex` individuals) and ComplexShape (boundary elements must be complex members).
+  The `ValidationError.report` includes all violations — this is intentional.
 
 ---
 
@@ -184,6 +283,8 @@ User namespaces are set via `SchemaBuilder(namespace="mtg")`. The URI base is cu
 | `kc/resources/kc_core_shapes.ttl` | Abstract SHACL | Hand-authored (WP2) |
 | `kc/schema.py` | Python API — schema | Implemented (WP3) |
 | `kc/graph.py` | Python API — instances | Implemented (WP3) |
-| `kc/queries/*.sparql` | SPARQL templates | Implemented (WP3) |
+| `kc/queries/*.sparql` | Framework SPARQL templates | Implemented (WP3) |
+| `models/mtg/schema.py` | MTG model schema | Implemented (WP3) |
+| `models/mtg/queries/*.sparql` | MTG SPARQL templates | Implemented (WP3) |
 | `demo/demo_instance.py` | MTG instance | Implemented (WP4) |
 | `demo/demo.py` | Marimo notebook | Implemented (WP5) |

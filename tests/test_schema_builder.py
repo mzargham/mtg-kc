@@ -26,7 +26,7 @@ def basic_schema() -> SchemaBuilder:
     )
     sb.add_face_type(
         "ColorTriple",
-        attributes={"pattern": vocab("ooa", "oaa"), "required": False},
+        attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}},
     )
     return sb
 

@@ -147,7 +147,7 @@ def test_promote_causes_validation_fail(mtg_kc):
     sb.add_edge_type("Relationship",
                      attributes={"disposition": vocab("adjacent", "opposite")})
     sb.add_face_type("ColorTriple",
-                     attributes={"pattern": vocab("ooa", "oaa"), "required": False})
+                     attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})
 
     # TODO: build the full MTG instance against sb, then promote
     sb.promote_to_attribute(

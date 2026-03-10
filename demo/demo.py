@@ -44,7 +44,7 @@ sb.add_vertex_type("Color")
 sb.add_edge_type("Relationship",
                  attributes={"disposition": vocab("adjacent", "opposite")})
 sb.add_face_type("ColorTriple",
-                 attributes={"pattern": vocab("ooa", "oaa"), "required": False})
+                 attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})
 
 _owl_dump   = mo.ui.code(sb.dump_owl(),   language="turtle", label="OWL (internal)")
 _shacl_dump = mo.ui.code(sb.dump_shacl(), language="turtle", label="SHACL (internal)")

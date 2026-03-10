@@ -95,7 +95,7 @@ sb.add_edge_type(
 
 sb.add_face_type(
     "ColorTriple",
-    attributes={"pattern": vocab("ooa", "oaa"), "required": False}
+    attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}}
 )
 
 sb.dump_owl()    # → Turtle string (kc_core + user schema, merged)

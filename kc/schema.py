@@ -87,7 +87,7 @@ class SchemaBuilder:
     >>> sb.add_edge_type("Relationship",
     ...     attributes={"disposition": vocab("adjacent", "opposite")})
     >>> sb.add_face_type("ColorTriple",
-    ...     attributes={"pattern": vocab("ooa", "oaa"), "required": False})
+    ...     attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})
     >>> owl_ttl = sb.dump_owl()
     >>> shacl_ttl = sb.dump_shacl()
     """
@@ -159,14 +159,18 @@ class SchemaBuilder:
 
         REQ-SCHEMA-04
 
-        Attributes with {"required": False} generate sh:minCount 0 constraints.
+        Attributes with ``required=False`` generate sh:minCount 0 constraints.
 
         Parameters
         ----------
         name : str
             Class name within the user namespace.
         attributes : dict, optional
-            Mapping of attribute name to VocabDescriptor or {"vocab": ..., "required": bool}.
+            Mapping of attribute name to attribute specification. Each value is either:
+
+            - A ``VocabDescriptor`` (from ``vocab()``) — required by default.
+            - A ``dict`` with keys ``{"vocab": VocabDescriptor, "required": bool}``
+              for optional attributes (``required=False`` generates sh:minCount 0).
 
         Returns
         -------
