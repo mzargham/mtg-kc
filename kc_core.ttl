@@ -1,0 +1,90 @@
+# kc/resources/kc_core.ttl
+# Abstract OWL ontology — KC topological backbone.
+# Authored in WP1. This file is a static resource; do not generate at runtime.
+#
+# DESIGN SEAMS (constraints OWL cannot express — see kc_core_shapes.ttl):
+#   - hasSource != hasTarget (open-world assumption; distinct individuals need SHACL)
+#   - Closed-triangle constraint across 3 hasEdge values (co-reference; needs sh:sparql)
+#
+# TODO (WP1): implement full ontology.
+
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix kc:   <https://example.org/kc#> .
+
+<https://example.org/kc>
+    a owl:Ontology ;
+    rdfs:label "Knowledge Complex Core Ontology" ;
+    rdfs:comment "Abstract topological backbone: Vertex, Edge, Face." .
+
+# ---------------------------------------------------------------------------
+# Abstract classes
+# ---------------------------------------------------------------------------
+
+kc:Vertex a owl:Class ;
+    rdfs:label "Vertex" ;
+    rdfs:comment "Abstract topological vertex. Concrete types must subclass this." .
+
+kc:Edge a owl:Class ;
+    rdfs:label "Edge" ;
+    rdfs:comment "Abstract topological edge. Concrete types must subclass this." .
+
+kc:Face a owl:Class ;
+    rdfs:label "Face" ;
+    rdfs:comment "Abstract topological 2-simplex (triangle). Concrete types must subclass this." .
+
+# ---------------------------------------------------------------------------
+# Object properties
+# ---------------------------------------------------------------------------
+
+kc:hasSource a owl:ObjectProperty ;
+    rdfs:label "hasSource" ;
+    rdfs:domain kc:Edge ;
+    rdfs:range  kc:Vertex ;
+    rdfs:comment "Source vertex of an edge." .
+
+kc:hasTarget a owl:ObjectProperty ;
+    rdfs:label "hasTarget" ;
+    rdfs:domain kc:Edge ;
+    rdfs:range  kc:Vertex ;
+    rdfs:comment "Target vertex of an edge." .
+
+kc:hasEdge a owl:ObjectProperty ;
+    rdfs:label "hasEdge" ;
+    rdfs:domain kc:Face ;
+    rdfs:range  kc:Edge ;
+    rdfs:comment "Edge composing a face. A face has exactly 3 hasEdge relations." .
+
+# ---------------------------------------------------------------------------
+# Cardinality restrictions (topological-OWL cell of the 2x2)
+# ---------------------------------------------------------------------------
+
+# Edge: exactly 1 hasSource, exactly 1 hasTarget
+# DESIGN SEAM: distinctness of source vs target requires SHACL (see kc_core_shapes.ttl)
+
+kc:Edge rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty kc:hasSource ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass kc:Vertex
+] .
+
+kc:Edge rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty kc:hasTarget ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass kc:Vertex
+] .
+
+# Face: exactly 3 hasEdge
+# DESIGN SEAM: closed-triangle constraint (edges share vertices in a cycle)
+# cannot be expressed in OWL. See sh:sparql in kc_core_shapes.ttl.
+
+kc:Face rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty kc:hasEdge ;
+    owl:qualifiedCardinality "3"^^xsd:nonNegativeInteger ;
+    owl:onClass kc:Edge
+] .

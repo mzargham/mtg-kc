@@ -1,0 +1,130 @@
+# kc/resources/kc_core_shapes.ttl
+# Abstract SHACL shapes — KC topological constraints.
+# Authored in WP2. This file is a static resource; do not generate at runtime.
+#
+# This file covers the topological-SHACL cell of the 2x2 responsibility map.
+# It enforces instance-level constraints that OWL cardinality axioms cannot express:
+#
+#   1. Edge endpoints are distinct individuals.
+#      WHY NOT OWL: OWL operates under the open-world assumption. Two properties pointing
+#      to different IRIs are not guaranteed to denote different individuals without an
+#      explicit owl:differentFrom assertion. SHACL operates on the graph as-is.
+#
+#   2. Closed-triangle constraint: the 3 edges of a Face share vertices in a cycle.
+#      WHY NOT OWL: This requires co-referencing across 3 separate hasEdge values —
+#      i.e. checking that hasEdge/hasSource and hasEdge/hasTarget form a specific
+#      topological pattern across multiple individuals. OWL-DL cannot express this.
+#      sh:sparql is the correct mechanism (hypothesis test point H2).
+#
+# TODO (WP2): implement full shapes.
+
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix kc:   <https://example.org/kc#> .
+@prefix kcs:  <https://example.org/kc/shape#> .
+
+# ---------------------------------------------------------------------------
+# EdgeShape — topological-SHACL constraints on KC:Edge instances
+# ---------------------------------------------------------------------------
+
+kcs:EdgeShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Edge ;
+    rdfs:label "EdgeShape" ;
+    rdfs:comment "Topological constraints on KC:Edge instances." ;
+
+    # hasSource: exactly 1, must be KC:Vertex
+    sh:property [
+        sh:path kc:hasSource ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class kc:Vertex ;
+        sh:message "Edge must have exactly one hasSource of type KC:Vertex."
+    ] ;
+
+    # hasTarget: exactly 1, must be KC:Vertex
+    sh:property [
+        sh:path kc:hasTarget ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class kc:Vertex ;
+        sh:message "Edge must have exactly one hasTarget of type KC:Vertex."
+    ] ;
+
+    # Distinctness constraint: source != target
+    # WHY SHACL NOT OWL: see file header note 1.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        rdfs:comment "Edge endpoints must be distinct individuals." ;
+        sh:message "Edge hasSource and hasTarget must not be the same vertex." ;
+        sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:hasSource ?src .
+                $this kc:hasTarget ?tgt .
+                FILTER (?src = ?tgt)
+            }
+        """
+    ] .
+
+# ---------------------------------------------------------------------------
+# FaceShape — topological-SHACL constraints on KC:Face instances
+# ---------------------------------------------------------------------------
+
+kcs:FaceShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Face ;
+    rdfs:label "FaceShape" ;
+    rdfs:comment "Topological constraints on KC:Face instances." ;
+
+    # hasEdge: exactly 3, each must be KC:Edge
+    sh:property [
+        sh:path kc:hasEdge ;
+        sh:minCount 3 ;
+        sh:maxCount 3 ;
+        sh:class kc:Edge ;
+        sh:message "Face must have exactly three hasEdge relations, each of type KC:Edge."
+    ] ;
+
+    # Closed-triangle constraint.
+    # WHY SHACL sh:sparql NOT OWL: see file header note 2. (Hypothesis test point H2.)
+    # The query finds faces where the 3 edges do NOT form a closed triangle.
+    # A closed triangle requires: for edges e1, e2, e3 with sources s1,s2,s3 and
+    # targets t1,t2,t3, the vertex set {s1,t1,s2,t2,s3,t3} has exactly 3 members
+    # and each vertex appears in exactly 2 of the 6 endpoint slots.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        rdfs:comment """
+            Closed-triangle constraint: the 3 edges of a Face must share vertices
+            forming a cycle (v1-v2, v2-v3, v3-v1). This cannot be expressed in OWL
+            because it requires co-referencing property values across 3 edge individuals.
+        """ ;
+        sh:message "Face edges do not form a closed triangle over shared vertices." ;
+        sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:hasEdge ?e1 ;
+                      kc:hasEdge ?e2 ;
+                      kc:hasEdge ?e3 .
+                FILTER (?e1 != ?e2 && ?e2 != ?e3 && ?e1 != ?e3)
+                ?e1 kc:hasSource ?s1 ; kc:hasTarget ?t1 .
+                ?e2 kc:hasSource ?s2 ; kc:hasTarget ?t2 .
+                ?e3 kc:hasSource ?s3 ; kc:hasTarget ?t3 .
+                # Collect all 6 endpoint slots and check vertex set cardinality = 3
+                # and each appears exactly twice. Implemented as: the union of all
+                # endpoint pairs covers exactly 3 distinct values.
+                BIND(IF(?s1 = ?s2 || ?s1 = ?t2 || ?s1 = ?s3 || ?s1 = ?t3, 1, 0) AS ?s1_shared)
+                BIND(IF(?t1 = ?s2 || ?t1 = ?t2 || ?t1 = ?s3 || ?t1 = ?t3, 1, 0) AS ?t1_shared)
+                FILTER NOT EXISTS {
+                    # Valid closed triangle: each endpoint appears in at least one other edge
+                    FILTER (?s1_shared = 1 && ?t1_shared = 1)
+                }
+            }
+        """
+        # NOTE: The SPARQL above is a starting-point sketch. WP2 implementation must
+        # verify this logic exhaustively against the 10 MTG triangles and at least
+        # 2 deliberately broken non-triangle cases. Refine as needed during WP2.
+    ] .

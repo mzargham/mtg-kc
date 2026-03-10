@@ -1,0 +1,28 @@
+# kc/queries/faces_by_edge_pattern.sparql
+#
+# For each face, return the face ID and the sorted multiset of disposition values
+# of its three edges. This enables ooa/oaa classification without pre-asserted
+# pattern attributes.
+#
+# REQ-QUERY-01, REQ-DEMO-05, REQ-VV-05
+#
+# Returns columns: face, e1, e2, e3, d1, d2, d3
+# (edges and dispositions not guaranteed to be sorted — caller should sort/aggregate)
+#
+# Template parameters: none (operates on full graph)
+
+PREFIX kc:  <https://example.org/kc#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?face ?e1 ?e2 ?e3 ?d1 ?d2 ?d3
+WHERE {
+    ?face a/rdfs:subClassOf* kc:Face ;
+          kc:hasEdge ?e1 ;
+          kc:hasEdge ?e2 ;
+          kc:hasEdge ?e3 .
+    FILTER (?e1 < ?e2 && ?e2 < ?e3)
+    ?e1 kc:disposition ?d1 .
+    ?e2 kc:disposition ?d2 .
+    ?e3 kc:disposition ?d3 .
+}
+ORDER BY ?face

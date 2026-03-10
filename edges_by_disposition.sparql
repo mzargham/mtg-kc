@@ -1,0 +1,16 @@
+# kc/queries/edges_by_disposition.sparql
+# REQ-QUERY-03
+# Return all edge individuals grouped by disposition value.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?edge ?type ?source ?target ?disposition
+WHERE {
+    ?edge a ?type ;
+          kc:hasSource ?source ;
+          kc:hasTarget ?target ;
+          kc:disposition ?disposition .
+    ?type rdfs:subClassOf* kc:Edge .
+}
+ORDER BY ?disposition ?edge
