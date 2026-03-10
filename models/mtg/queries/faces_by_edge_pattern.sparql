@@ -17,9 +17,9 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 SELECT ?face ?e1 ?e2 ?e3 ?d1 ?d2 ?d3
 WHERE {
     ?face a/rdfs:subClassOf* kc:Face ;
-          kc:hasEdge ?e1 ;
-          kc:hasEdge ?e2 ;
-          kc:hasEdge ?e3 .
+          kc:boundedBy ?e1 ;
+          kc:boundedBy ?e2 ;
+          kc:boundedBy ?e3 .
     FILTER (?e1 < ?e2 && ?e2 < ?e3)
     ?e1 kc:disposition ?d1 .
     ?e2 kc:disposition ?d2 .

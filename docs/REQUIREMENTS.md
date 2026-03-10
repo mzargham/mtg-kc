@@ -8,25 +8,27 @@ The hypothesis test criteria from PLAN.md (H1–H6) are cross-referenced where a
 ## REQ-CORE: Abstract Ontology and Shapes
 
 ### REQ-CORE-01
-The package SHALL provide an abstract OWL ontology defining `KC:Vertex`, `KC:Edge`, and
-`KC:Face` as the three topological element classes.
+The package SHALL provide an abstract OWL ontology defining `KC:Element` as the base class
+for all topological elements (k-simplices), with `KC:Vertex`, `KC:Edge`, and `KC:Face` as
+subclasses. `KC:Complex` SHALL be defined as a collection of elements via `KC:hasElement`.
+The `KC:boundedBy` property SHALL have `rdfs:domain` and `rdfs:range` of `KC:Element`.
 
 ### REQ-CORE-02
-`KC:Edge` SHALL declare exactly one `KC:hasSource` and exactly one `KC:hasTarget`, each
-of type `KC:Vertex`, via OWL qualified cardinality restrictions.
+`KC:Edge` SHALL declare exactly 2 `KC:boundedBy` relations of type `KC:Vertex` via OWL
+qualified cardinality restriction. The boundary is unordered (edges are unoriented).
 
 ### REQ-CORE-03
-`KC:Face` SHALL declare exactly three `KC:hasEdge` relations, each of type `KC:Edge`,
-via OWL qualified cardinality restriction.
+`KC:Face` SHALL declare exactly 3 `KC:boundedBy` relations of type `KC:Edge` via OWL
+qualified cardinality restriction. The boundary is unordered (faces are unoriented).
 
 ### REQ-CORE-04
-The abstract SHACL shapes SHALL enforce that `KC:Edge` instances have `hasSource != hasTarget`
-(endpoints are distinct individuals). *[Design seam: OWL open-world assumption prevents this
-being expressed as an OWL axiom.]*
+The abstract SHACL shapes SHALL enforce that `KC:Edge` instances have 2 distinct boundary
+vertices (the two `boundedBy` values are different individuals). *[Design seam: OWL
+open-world assumption prevents this being expressed as an OWL axiom.]*
 
 ### REQ-CORE-05
-The abstract SHACL shapes SHALL enforce that the three edges of a `KC:Face` instance form
-a closed triangle over shared vertex endpoints. This constraint SHALL be implemented as a
+The abstract SHACL shapes SHALL enforce that the three boundary edges of a `KC:Face` instance
+form a closed triangle over shared vertex endpoints. This constraint SHALL be implemented as a
 `sh:sparql` constraint. *[Design seam: OWL cannot co-reference across three property values.]*
 *[Cross-ref: H2]*
 
@@ -99,14 +101,14 @@ against the node. It SHALL raise `ValidationError` with a human-readable report 
 fails.
 
 ### REQ-GRAPH-03
-`KnowledgeComplex.add_edge(id, type, source, target, **attributes)` SHALL assert a new edge
-individual, link it to existing vertex individuals via `KC:hasSource` and `KC:hasTarget`,
+`KnowledgeComplex.add_edge(id, type, vertices, **attributes)` SHALL assert a new edge
+individual, link it to exactly 2 existing vertex individuals via `KC:boundedBy`,
 assert all provided attributes, and SHALL run SHACL validation. It SHALL raise `ValidationError`
-on failure.
+on failure. The `vertices` parameter is an unordered collection (edges are unoriented).
 
 ### REQ-GRAPH-04
-`KnowledgeComplex.add_face(id, type, edges, **attributes)` SHALL assert a new face individual,
-link it to exactly 3 existing edge individuals via `KC:hasEdge`, assert all provided attributes,
+`KnowledgeComplex.add_face(id, type, boundary, **attributes)` SHALL assert a new face individual,
+link it to exactly 3 existing edge individuals via `KC:boundedBy`, assert all provided attributes,
 and SHALL run SHACL validation including the closed-triangle `sh:sparql` constraint.
 It SHALL raise `ValidationError` on failure. *[Cross-ref: H4]*
 

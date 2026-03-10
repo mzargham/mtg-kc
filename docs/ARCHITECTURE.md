@@ -7,7 +7,7 @@ The Python package exists to hide this table from the user.
 
 |  | **OWL** | **SHACL** |
 |---|---|---|
-| **Topological** | `KC:Edge` has exactly 1 `hasSource` and 1 `hasTarget`; `KC:Face` has exactly 3 `hasEdge` (class + cardinality axioms on abstract classes) | Endpoints are distinct vertices; edges of a face form a closed triangle (instance-level; requires `sh:sparql`) |
+| **Topological** | `KC:Element` base class; `KC:Vertex`, `KC:Edge`, `KC:Face` as subclasses. `KC:Edge` has exactly 2 `boundedBy` (Vertex); `KC:Face` has exactly 3 `boundedBy` (Edge). `KC:Complex` as collection of elements via `KC:hasElement`. | Boundary vertices are distinct; boundary edges of a face form a closed triangle; boundary-closure of a complex (all instance-level; requires `sh:sparql`) |
 | **Ontological** | Concrete subclasses and their allowed attributes (`Relationship` with `disposition`; `ColorTriple` with `pattern`); property domain/range declarations | Controlled vocabulary enforcement (`disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
 
 ### Why Both OWL and SHACL at Each Layer
@@ -113,13 +113,41 @@ replace) the core ontology.
 
 | Constraint | OWL can express? | Resolution |
 |---|---|---|
-| Edge has exactly 2 endpoints | Yes (cardinality on `hasSource`, `hasTarget`) | OWL cardinality axiom |
-| Face has exactly 3 edges | Yes (cardinality on `hasEdge`) | OWL cardinality axiom |
-| Endpoints are distinct individuals | No (OWL open-world; same-as/different-from is individual-level) | SHACL `sh:not sh:equals` |
-| Edges of a face form a closed triangle | No (requires co-reference across 3 property values) | SHACL `sh:sparql` constraint |
+| Edge has exactly 2 boundary vertices | Yes (cardinality on `boundedBy`) | OWL cardinality axiom |
+| Face has exactly 3 boundary edges | Yes (cardinality on `boundedBy`) | OWL cardinality axiom |
+| Boundary vertices are distinct individuals | No (OWL open-world; same-as/different-from is individual-level) | SHACL `sh:sparql` (COUNT DISTINCT) |
+| Boundary edges of a face form a closed triangle | No (requires co-reference across 3 property values) | SHACL `sh:sparql` constraint |
+| Boundary-closure of a complex | No (requires co-reference across `hasElement` and `boundedBy` on different individuals) | SHACL `sh:sparql` constraint |
 | Controlled vocabulary on data property | No (without `owl:oneOf` on individuals, impractical for strings) | SHACL `sh:in` |
 
 These seams are documented as comments in the relevant `.ttl` files.
+
+---
+
+## Known Simplifications
+
+### Element Base Class and Complex
+
+All topological objects are subclasses of `kc:Element` (the abstract k-simplex). The simplex
+order k determines boundary cardinality: k=0 (Vertex) has empty boundary; k>=1 has (k+1)
+boundary (k-1)-simplices. Higher-order simplices (k>=3) can be defined by subclassing Element
+and adding a `boundedBy` cardinality restriction.
+
+A `kc:Complex` is a collection of elements (`kc:hasElement`) with a SHACL boundary-closure
+constraint: if a simplex is in the complex, all its boundary elements must also be in the complex.
+
+### Orientation
+
+All simplices in this demo are **unoriented**. The boundary operator (`kc:boundedBy`) returns
+an unordered set, not an ordered list. This means:
+
+- **Edges** are undirected — `boundedBy` links to 2 vertices with no source/target distinction
+- **Faces** are unoriented triangles — the boundary edge cycle has no winding direction
+- **Coboundary** is computed via SPARQL inverse lookup, not stored triples
+
+This is sufficient for the MTG color wheel where all relationships are symmetric.
+
+For oriented simplex support (directed edges, oriented faces), see `docs/issues/orientation-support.md`.
 
 ---
 

@@ -53,12 +53,15 @@ The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is suff
 
 Raw Turtle, hand-authored, static resource loaded by the package.
 
-- Classes: `KC:Vertex`, `KC:Edge`, `KC:Face`
-- Object properties: `KC:hasSource`, `KC:hasTarget` (Edge → Vertex); `KC:hasEdge` (Face → Edge)
+- Base class: `KC:Element` — abstract k-simplex; all topological types subclass this
+- Simplex classes: `KC:Vertex` (k=0), `KC:Edge` (k=1), `KC:Face` (k=2) — subclasses of `KC:Element`
+- Collection: `KC:Complex` with `KC:hasElement` membership property
+- Object property: `KC:boundedBy` — dimension-polymorphic boundary operator (`domain: Element`, `range: Element`)
 - OWL cardinality axioms:
-  - `KC:Edge` `owl:minQualifiedCardinality 1` and `owl:maxQualifiedCardinality 1` on both `hasSource` and `hasTarget` (exactly-1 each, distinct)
-  - `KC:Face` `owl:qualifiedCardinality 3` on `hasEdge`
-- Code comment explicitly documents what OWL cannot enforce (closed-triangle rule) and why — this is the design seam
+  - `KC:Edge` `owl:qualifiedCardinality 2` on `boundedBy` (exactly 2 boundary vertices)
+  - `KC:Face` `owl:qualifiedCardinality 3` on `boundedBy` (exactly 3 boundary edges)
+  - Vertex has empty boundary (k=0); higher-order simplices (k>=3) extensible via subclass + restriction
+- Code comment explicitly documents what OWL cannot enforce (closed-triangle rule, boundary-closure) and why — these are the design seams
 
 Deliverable: `kc/resources/kc_core.ttl`
 
@@ -66,10 +69,11 @@ Deliverable: `kc/resources/kc_core.ttl`
 
 Raw Turtle, hand-authored, static resource.
 
-- `KC:EdgeShape`: `hasSource` present, is `KC:Vertex`; `hasTarget` present, is `KC:Vertex`; `hasSource != hasTarget` (via `sh:not / sh:equals`)
-- `KC:FaceShape`: `hasEdge` count = 3; closed-triangle constraint via `sh:sparql`
+- `KC:EdgeShape`: `boundedBy` count = 2, each is `KC:Vertex`; boundary vertices are distinct (via `sh:sparql` COUNT DISTINCT)
+- `KC:FaceShape`: `boundedBy` count = 3, each is `KC:Edge`; closed-triangle constraint via `sh:sparql`
   - The SPARQL constraint is the explicit test of the topological expressivity hypothesis
   - The constraint checks that the three edges share vertices forming a cycle
+- `KC:ComplexShape`: boundary-closure constraint via `sh:sparql` — if a simplex is in the complex, all its boundary elements must also be in the complex
 
 Deliverable: `kc/resources/kc_core_shapes.ttl`
 
@@ -108,9 +112,9 @@ One call, two internal locations. The package enforces this invariant.
 kc = KnowledgeComplex(schema=sb)
 
 kc.add_vertex("White", type="Color")
-kc.add_edge("WU", type="Relationship", source="White", target="Blue",
+kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
             disposition="adjacent")
-kc.add_face("WUB", type="ColorTriple", edges=["WU", "UB", "WB"])
+kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
 # ↑ triggers SHACL validation on write; raises ValidationError with report on failure
 
 df = kc.query("faces_by_edge_pattern")   # named template, returns DataFrame

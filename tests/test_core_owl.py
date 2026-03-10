@@ -29,29 +29,53 @@ def test_core_owl_is_valid_turtle(core_owl):
 
 
 def test_core_classes_exist(core_owl):
-    """REQ-CORE-01: KC:Vertex, KC:Edge, KC:Face are declared as owl:Class."""
-    for cls in [KC.Vertex, KC.Edge, KC.Face]:
+    """REQ-CORE-01: KC:Element, KC:Vertex, KC:Edge, KC:Face, KC:Complex are declared as owl:Class."""
+    for cls in [KC.Element, KC.Vertex, KC.Edge, KC.Face, KC.Complex]:
         assert (cls, RDF.type, OWL.Class) in core_owl, f"Missing class: {cls}"
 
 
+def test_simplex_subclass_hierarchy(core_owl):
+    """REQ-CORE-01: Vertex, Edge, Face are subclasses of Element."""
+    for cls in [KC.Vertex, KC.Edge, KC.Face]:
+        assert (cls, RDFS.subClassOf, KC.Element) in core_owl, (
+            f"{cls} is not declared as rdfs:subClassOf kc:Element"
+        )
+
+
 def test_edge_cardinality_axioms(core_owl):
-    """REQ-CORE-02: KC:Edge has cardinality restrictions on hasSource and hasTarget."""
-    # Check that there exist blank node restrictions on kc:Edge for hasSource and hasTarget
+    """REQ-CORE-02: KC:Edge has cardinality restriction on boundedBy (exactly 2 Vertex)."""
     restrictions = set(core_owl.subjects(RDF.type, OWL.Restriction))
-    source_restricted = any(
-        (r, OWL.onProperty, KC.hasSource) in core_owl for r in restrictions
+    bounded_restricted = any(
+        (r, OWL.onProperty, KC.boundedBy) in core_owl
+        and (KC.Edge, RDFS.subClassOf, r) in core_owl
+        for r in restrictions
     )
-    target_restricted = any(
-        (r, OWL.onProperty, KC.hasTarget) in core_owl for r in restrictions
-    )
-    assert source_restricted, "No cardinality restriction on kc:hasSource"
-    assert target_restricted, "No cardinality restriction on kc:hasTarget"
+    assert bounded_restricted, "No cardinality restriction on kc:boundedBy for Edge"
 
 
 def test_face_cardinality_axioms(core_owl):
-    """REQ-CORE-03: KC:Face has cardinality restriction on hasEdge."""
+    """REQ-CORE-03: KC:Face has cardinality restriction on boundedBy (exactly 3 Edge)."""
     restrictions = set(core_owl.subjects(RDF.type, OWL.Restriction))
-    edge_restricted = any(
-        (r, OWL.onProperty, KC.hasEdge) in core_owl for r in restrictions
+    bounded_restricted = any(
+        (r, OWL.onProperty, KC.boundedBy) in core_owl
+        and (KC.Face, RDFS.subClassOf, r) in core_owl
+        for r in restrictions
     )
-    assert edge_restricted, "No cardinality restriction on kc:hasEdge"
+    assert bounded_restricted, "No cardinality restriction on kc:boundedBy for Face"
+
+
+def test_bounded_by_domain_range(core_owl):
+    """boundedBy has domain kc:Element and range kc:Element."""
+    assert (KC.boundedBy, RDFS.domain, KC.Element) in core_owl, (
+        "kc:boundedBy missing rdfs:domain kc:Element"
+    )
+    assert (KC.boundedBy, RDFS.range, KC.Element) in core_owl, (
+        "kc:boundedBy missing rdfs:range kc:Element"
+    )
+
+
+def test_has_element_property(core_owl):
+    """kc:hasElement property exists with domain Complex and range Element."""
+    assert (KC.hasElement, RDF.type, OWL.ObjectProperty) in core_owl
+    assert (KC.hasElement, RDFS.domain, KC.Complex) in core_owl
+    assert (KC.hasElement, RDFS.range, KC.Element) in core_owl

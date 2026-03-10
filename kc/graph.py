@@ -57,8 +57,8 @@ class KnowledgeComplex:
     >>> kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
     >>> kc.add_vertex("White", type="Color")
     >>> kc.add_edge("WU", type="Relationship",
-    ...             source="White", target="Blue", disposition="adjacent")
-    >>> kc.add_face("WUB", type="ColorTriple", edges=["WU", "UB", "WB"])
+    ...             vertices={"White", "Blue"}, disposition="adjacent")
+    >>> kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
     >>> df = kc.query("faces_by_edge_pattern")
     """
 
@@ -125,12 +125,11 @@ class KnowledgeComplex:
         self,
         id: str,
         type: str,
-        source: str,
-        target: str,
+        vertices: set[str] | list[str],
         **attributes: Any,
     ) -> None:
         """
-        Assert an edge individual, link to source/target vertices, and validate.
+        Assert an edge individual, link to boundary vertices, and validate.
 
         REQ-GRAPH-03
 
@@ -140,18 +139,21 @@ class KnowledgeComplex:
             Local identifier for the edge.
         type : str
             Edge type name (must be a registered subclass of KC:Edge).
-        source : str
-            ID of the source vertex individual.
-        target : str
-            ID of the target vertex individual.
+        vertices : set[str] | list[str]
+            Exactly 2 vertex IDs forming the boundary of this edge.
+            Unordered (edges are unoriented in this demo).
         **attributes : Any
             Attribute values (e.g. disposition="adjacent").
 
         Raises
         ------
+        ValueError
+            If len(vertices) != 2.
         ValidationError
             If SHACL validation fails after assertion.
         """
+        if len(vertices) != 2:
+            raise ValueError(f"add_edge requires exactly 2 vertices; got {len(vertices)}")
         # TODO (WP3)
         raise NotImplementedError
 
@@ -159,11 +161,11 @@ class KnowledgeComplex:
         self,
         id: str,
         type: str,
-        edges: list[str],
+        boundary: list[str],
         **attributes: Any,
     ) -> None:
         """
-        Assert a face individual, link to exactly 3 edge individuals, and validate.
+        Assert a face individual, link to exactly 3 boundary edge individuals, and validate.
 
         Includes closed-triangle SHACL sh:sparql constraint check.
 
@@ -175,20 +177,20 @@ class KnowledgeComplex:
             Local identifier for the face.
         type : str
             Face type name (must be a registered subclass of KC:Face).
-        edges : list[str]
-            Exactly 3 edge IDs.
+        boundary : list[str]
+            Exactly 3 edge IDs forming the boundary of this face.
         **attributes : Any
             Attribute values (e.g. pattern="ooa").
 
         Raises
         ------
         ValueError
-            If len(edges) != 3.
+            If len(boundary) != 3.
         ValidationError
             If SHACL validation fails after assertion.
         """
-        if len(edges) != 3:
-            raise ValueError(f"add_face requires exactly 3 edges; got {len(edges)}")
+        if len(boundary) != 3:
+            raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
         # TODO (WP3)
         raise NotImplementedError
 

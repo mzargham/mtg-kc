@@ -38,10 +38,10 @@ def minimal_kc(schema) -> KnowledgeComplex:
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     kc.add_vertex("Black", type="Color")
-    kc.add_edge("WU", type="Relationship", source="White", target="Blue",  disposition="adjacent")
-    kc.add_edge("UB", type="Relationship", source="Blue",  target="Black", disposition="opposite")
-    kc.add_edge("WB", type="Relationship", source="White", target="Black", disposition="opposite")
-    kc.add_face("WUB", type="ColorTriple", edges=["WU", "UB", "WB"])
+    kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},  disposition="adjacent")
+    kc.add_edge("UB", type="Relationship", vertices={"Blue", "Black"}, disposition="opposite")
+    kc.add_edge("WB", type="Relationship", vertices={"White", "Black"}, disposition="opposite")
+    kc.add_face("WUB", type="ColorTriple", boundary=["WU", "UB", "WB"])
     return kc
 
 
@@ -67,7 +67,7 @@ def test_add_edge_valid(schema):
     kc = KnowledgeComplex(schema=schema)
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
-    kc.add_edge("WU", type="Relationship", source="White", target="Blue",
+    kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
                 disposition="adjacent")
 
 
@@ -77,7 +77,7 @@ def test_add_edge_invalid_disposition(schema):
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     with pytest.raises(ValidationError):
-        kc.add_edge("WU", type="Relationship", source="White", target="Blue",
+        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
                     disposition="invalid_value")
 
 
@@ -93,19 +93,19 @@ def test_add_face_open_triangle_fails(schema):
     kc = KnowledgeComplex(schema=schema)
     for v in ["W", "U", "B", "R"]:
         kc.add_vertex(v, type="Color")
-    kc.add_edge("WU", type="Relationship", source="W", target="U", disposition="adjacent")
-    kc.add_edge("UB", type="Relationship", source="U", target="B", disposition="adjacent")
-    kc.add_edge("WR", type="Relationship", source="W", target="R", disposition="opposite")
+    kc.add_edge("WU", type="Relationship", vertices={"W", "U"}, disposition="adjacent")
+    kc.add_edge("UB", type="Relationship", vertices={"U", "B"}, disposition="adjacent")
+    kc.add_edge("WR", type="Relationship", vertices={"W", "R"}, disposition="opposite")
     # WU, UB, WR do not form a closed triangle
     with pytest.raises(ValidationError):
-        kc.add_face("bad", type="ColorTriple", edges=["WU", "UB", "WR"])
+        kc.add_face("bad", type="ColorTriple", boundary=["WU", "UB", "WR"])
 
 
 def test_add_face_wrong_count_raises(schema):
     """REQ-GRAPH-04: edges list != 3 raises ValueError (not ValidationError)."""
     kc = KnowledgeComplex(schema=schema)
     with pytest.raises(ValueError):
-        kc.add_face("f", type="ColorTriple", edges=["e1", "e2"])
+        kc.add_face("f", type="ColorTriple", boundary=["e1", "e2"])
 
 
 # --- ValidationError ---
@@ -116,7 +116,7 @@ def test_validation_error_has_report(schema):
     kc.add_vertex("White", type="Color")
     kc.add_vertex("Blue",  type="Color")
     try:
-        kc.add_edge("WU", type="Relationship", source="White", target="Blue",
+        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
                     disposition="INVALID")
     except ValidationError as e:
         assert isinstance(e.report, str)

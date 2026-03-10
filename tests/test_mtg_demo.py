@@ -54,20 +54,18 @@ def mtg_kc() -> KnowledgeComplex:
 
     edge_id = 0
     for pair in _ADJACENT_PAIRS:
-        s, t = sorted(pair)
         kc.add_edge(f"e{edge_id}", type="Relationship",
-                    source=s, target=t, disposition="adjacent")
+                    vertices=pair, disposition="adjacent")
         edge_id += 1
 
     for pair in _OPPOSITE_PAIRS:
-        s, t = sorted(pair)
         kc.add_edge(f"e{edge_id}", type="Relationship",
-                    source=s, target=t, disposition="opposite")
+                    vertices=pair, disposition="opposite")
         edge_id += 1
 
     # TODO (WP4): enumerate all 10 valid triangles and add_face for each
     # For now, a placeholder to make fixture construction non-blocking
-    # kc.add_face("f0", type="ColorTriple", edges=[...])
+    # kc.add_face("f0", type="ColorTriple", boundary=[...])
 
     return kc
 

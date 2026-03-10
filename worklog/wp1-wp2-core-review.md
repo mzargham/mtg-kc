@@ -1,6 +1,6 @@
 # WP1+WP2 — Abstract OWL + SHACL Core (Combined Review)
 
-## Status: Not Started
+## Status: Accepted (conditional)
 
 ## Scope
 
@@ -32,4 +32,7 @@ Requirements covered by tests: REQ-CORE-01 through REQ-CORE-06, H2.
 ## Changelog
 
 | Date | Change Requested | Resolution |
-|------|-----------------|------------|
+| 2026-03-10 | Submitted for review | All 10 tests pass (4 OWL, 6 SHACL). REQ-CORE-01 through REQ-CORE-06 and H2 verified by tests. |
+| 2026-03-10 | Uniform boundary operator; orientation as documented simplification | Replaced hasSource/hasTarget/hasEdge with single kc:boundedBy (dimension-polymorphic). Edge: cardinality 2 (Vertex), Face: cardinality 3 (Edge). Added coboundary SPARQL stub. Created docs/issues/orientation-support.md. Updated all 13 files. All 10 tests pass. |
+| 2026-03-10 | Add kc:Element base class and kc:Complex container | Added kc:Element as base class for all simplices; Vertex/Edge/Face are now rdfs:subClassOf Element. Added rdfs:domain/range on boundedBy. Added kc:Complex with kc:hasElement and kcs:ComplexShape (boundary-closure sh:sparql constraint). Higher-order simplex stub as comments. New tests: class existence (Element, Complex), subclass hierarchy, domain/range, hasElement property, ComplexShape valid/invalid. Updated ARCHITECTURE.md, REQUIREMENTS.md, PLAN.md. |
+| 2026-03-10 | Conditional approval granted | User verified all quality criteria satisfied. 15 tests pass (7 OWL, 8 SHACL). Proceeding to WP3. |

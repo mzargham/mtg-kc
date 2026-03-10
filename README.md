@@ -80,7 +80,7 @@ kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
 # Layer 3: concrete data
 kc.add_vertex("White", type="Color")
 kc.add_vertex("Blue",  type="Color")
-kc.add_edge("WU", type="Relationship", source="White", target="Blue", disposition="adjacent")
+kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"}, disposition="adjacent")
 # ... add remaining vertices, edges, faces
 # add_face triggers SHACL validation on write
 

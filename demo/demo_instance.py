@@ -37,9 +37,9 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
         ("RG", "Red",   "Green"),
         ("GW", "Green", "White"),
     ]
-    for eid, src, tgt in adjacent:
+    for eid, v1, v2 in adjacent:
         kc.add_edge(eid, type="Relationship",
-                    source=src, target=tgt, disposition="adjacent")
+                    vertices={v1, v2}, disposition="adjacent")
 
     # REQ-DEMO-03: 5 opposite edges (pentagon diagonals)
     opposite = [
@@ -49,9 +49,9 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
         ("UR", "Blue",  "Red"),
         ("BG", "Black", "Green"),
     ]
-    for eid, src, tgt in opposite:
+    for eid, v1, v2 in opposite:
         kc.add_edge(eid, type="Relationship",
-                    source=src, target=tgt, disposition="opposite")
+                    vertices={v1, v2}, disposition="opposite")
 
     # REQ-DEMO-04: 10 valid ColorTriple faces
     # Each face is a valid closed triangle in the 10-edge graph.
@@ -67,7 +67,7 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
     #     ...
     # ]
     # for fid, edges in faces:
-    #     kc.add_face(fid, type="ColorTriple", edges=edges)
+    #     kc.add_face(fid, type="ColorTriple", boundary=edges)
 
     return kc
 

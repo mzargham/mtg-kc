@@ -45,13 +45,13 @@ def _validate(data_graph: Graph) -> tuple[bool, str]:
 
 
 def _minimal_valid_edge() -> Graph:
-    """Construct a minimal valid KC:Edge individual."""
+    """Construct a minimal valid KC:Edge individual with 2 boundary vertices."""
     g = Graph()
     g.add((EX.v1, RDF.type, KC.Vertex))
     g.add((EX.v2, RDF.type, KC.Vertex))
     g.add((EX.e1, RDF.type, KC.Edge))
-    g.add((EX.e1, KC.hasSource, EX.v1))
-    g.add((EX.e1, KC.hasTarget, EX.v2))
+    g.add((EX.e1, KC.boundedBy, EX.v1))
+    g.add((EX.e1, KC.boundedBy, EX.v2))
     return g
 
 
@@ -68,12 +68,13 @@ def test_valid_edge_passes():
 
 
 def test_edge_same_endpoints_fails():
-    """REQ-CORE-04, REQ-VV-02: edge with source == target must fail SHACL."""
+    """REQ-CORE-04, REQ-VV-02: edge with both boundary vertices the same must fail SHACL."""
     g = Graph()
     g.add((EX.v1, RDF.type, KC.Vertex))
     g.add((EX.e1, RDF.type, KC.Edge))
-    g.add((EX.e1, KC.hasSource, EX.v1))
-    g.add((EX.e1, KC.hasTarget, EX.v1))   # same individual!
+    g.add((EX.e1, KC.boundedBy, EX.v1))
+    # Only one distinct vertex — cardinality shape expects 2 distinct triples,
+    # but RDF deduplicates identical triples so only 1 boundedBy triple exists.
     conforms, report = _validate(g)
     assert not conforms, "Expected same-endpoint edge to fail SHACL."
 
@@ -89,20 +90,20 @@ def test_valid_face_passes():
         (EX.e23, EX.v2, EX.v3),
         (EX.e31, EX.v3, EX.v1),
     ]
-    for e, s, t in edges:
+    for e, v_a, v_b in edges:
         g.add((e, RDF.type, KC.Edge))
-        g.add((e, KC.hasSource, s))
-        g.add((e, KC.hasTarget, t))
+        g.add((e, KC.boundedBy, v_a))
+        g.add((e, KC.boundedBy, v_b))
     g.add((EX.f1, RDF.type, KC.Face))
     for e, _, _ in edges:
-        g.add((EX.f1, KC.hasEdge, e))
+        g.add((EX.f1, KC.boundedBy, e))
     conforms, report = _validate(g)
     assert conforms, f"Expected valid face to pass.\n{report}"
 
 
 def test_open_triangle_face_fails():
     """REQ-CORE-05, REQ-VV-02: face with non-closed edges must fail SHACL sh:sparql constraint."""
-    # Edges: v1-v2, v2-v3, v1-v4 (not a closed triangle)
+    # Edges: v1-v2, v2-v3, v1-v4 (not a closed triangle — introduces v4)
     g = Graph()
     for v in [EX.v1, EX.v2, EX.v3, EX.v4]:
         g.add((v, RDF.type, KC.Vertex))
@@ -111,13 +112,13 @@ def test_open_triangle_face_fails():
         (EX.e23, EX.v2, EX.v3),
         (EX.e14, EX.v1, EX.v4),  # broken — introduces v4, breaks cycle
     ]
-    for e, s, t in edges:
+    for e, v_a, v_b in edges:
         g.add((e, RDF.type, KC.Edge))
-        g.add((e, KC.hasSource, s))
-        g.add((e, KC.hasTarget, t))
+        g.add((e, KC.boundedBy, v_a))
+        g.add((e, KC.boundedBy, v_b))
     g.add((EX.f1, RDF.type, KC.Face))
     for e, _, _ in edges:
-        g.add((EX.f1, KC.hasEdge, e))
+        g.add((EX.f1, KC.boundedBy, e))
     conforms, report = _validate(g)
     assert not conforms, "Expected open-triangle face to fail SHACL."
 
@@ -127,10 +128,51 @@ def test_face_wrong_edge_count_fails():
     g = _minimal_valid_edge()
     g.add((EX.v3, RDF.type, KC.Vertex))
     g.add((EX.e2, RDF.type, KC.Edge))
-    g.add((EX.e2, KC.hasSource, EX.v2))
-    g.add((EX.e2, KC.hasTarget, EX.v3))
+    g.add((EX.e2, KC.boundedBy, EX.v2))
+    g.add((EX.e2, KC.boundedBy, EX.v3))
     g.add((EX.f1, RDF.type, KC.Face))
-    g.add((EX.f1, KC.hasEdge, EX.e1))
-    g.add((EX.f1, KC.hasEdge, EX.e2))  # only 2 edges
+    g.add((EX.f1, KC.boundedBy, EX.e1))
+    g.add((EX.f1, KC.boundedBy, EX.e2))  # only 2 edges
     conforms, report = _validate(g)
     assert not conforms, "Expected 2-edge face to fail SHACL."
+
+
+# ---------------------------------------------------------------------------
+# ComplexShape — boundary-closure tests
+# ---------------------------------------------------------------------------
+
+def _minimal_valid_complex() -> Graph:
+    """Construct a minimal valid Complex containing one edge and its two vertices."""
+    g = Graph()
+    g.add((EX.v1, RDF.type, KC.Vertex))
+    g.add((EX.v2, RDF.type, KC.Vertex))
+    g.add((EX.e1, RDF.type, KC.Edge))
+    g.add((EX.e1, KC.boundedBy, EX.v1))
+    g.add((EX.e1, KC.boundedBy, EX.v2))
+    g.add((EX.cx, RDF.type, KC.Complex))
+    g.add((EX.cx, KC.hasElement, EX.v1))
+    g.add((EX.cx, KC.hasElement, EX.v2))
+    g.add((EX.cx, KC.hasElement, EX.e1))
+    return g
+
+
+def test_valid_complex_passes():
+    """A complex containing an edge and both its boundary vertices passes SHACL."""
+    conforms, report = _validate(_minimal_valid_complex())
+    assert conforms, f"Expected valid complex to pass.\n{report}"
+
+
+def test_complex_missing_boundary_vertex_fails():
+    """A complex containing an edge but missing one boundary vertex must fail SHACL."""
+    g = Graph()
+    g.add((EX.v1, RDF.type, KC.Vertex))
+    g.add((EX.v2, RDF.type, KC.Vertex))
+    g.add((EX.e1, RDF.type, KC.Edge))
+    g.add((EX.e1, KC.boundedBy, EX.v1))
+    g.add((EX.e1, KC.boundedBy, EX.v2))
+    # Complex has the edge and v1, but NOT v2
+    g.add((EX.cx, RDF.type, KC.Complex))
+    g.add((EX.cx, KC.hasElement, EX.v1))
+    g.add((EX.cx, KC.hasElement, EX.e1))
+    conforms, report = _validate(g)
+    assert not conforms, "Expected complex missing a boundary vertex to fail SHACL."
