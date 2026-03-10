@@ -16,13 +16,13 @@ Implement all `NotImplementedError` stubs in the two core modules:
 - `dump_owl()` — serialize merged OWL graph as Turtle
 - `dump_shacl()` — serialize merged SHACL graph as Turtle
 
-**`kc/graph.py` — KnowledgeComplex:**
+**`kc/graph.py` — KnowledgeComplex (maps to kc:Complex):**
 
-- `_init_graph()` — initialize instance graph with schema
-- `_validate()` — run pyshacl validation, raise `ValidationError` on failure
-- `add_vertex(id, type)` — assert vertex, validate
-- `add_edge(id, type, source, target, **attributes)` — assert edge, validate
-- `add_face(id, type, edges, **attributes)` — assert face, validate (including closed-triangle)
+- `_init_graph()` — initialize instance graph with schema; create kc:Complex individual
+- `_validate()` — run pyshacl validation (element shapes + ComplexShape boundary-closure)
+- `add_vertex(id, type)` — assert vertex + hasElement, validate
+- `add_edge(id, type, vertices, **attributes)` — assert edge + boundedBy + hasElement, validate
+- `add_face(id, type, boundary, **attributes)` — assert face + boundedBy + hasElement, validate (closed-triangle + boundary-closure)
 - `query(template_name, **kwargs)` — execute named SPARQL template, return DataFrame
 - `dump_graph()` — serialize instance graph as Turtle
 

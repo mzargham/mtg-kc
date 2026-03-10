@@ -102,10 +102,26 @@ def test_add_face_open_triangle_fails(schema):
 
 
 def test_add_face_wrong_count_raises(schema):
-    """REQ-GRAPH-04: edges list != 3 raises ValueError (not ValidationError)."""
+    """REQ-GRAPH-04: boundary list != 3 raises ValueError (not ValidationError)."""
     kc = KnowledgeComplex(schema=schema)
     with pytest.raises(ValueError):
         kc.add_face("f", type="ColorTriple", boundary=["e1", "e2"])
+
+
+# --- boundary-closure (ComplexShape) ---
+
+def test_add_edge_before_vertices_fails(schema):
+    """ComplexShape: adding an edge before its boundary vertices raises ValidationError.
+
+    Boundary-closure requires that all boundary elements of a simplex are
+    already members of the complex. Adding an edge whose vertices haven't
+    been added yet violates this constraint.
+    """
+    kc = KnowledgeComplex(schema=schema)
+    # Do NOT add vertices first — edge's boundary vertices are not in the complex
+    with pytest.raises(ValidationError):
+        kc.add_edge("WU", type="Relationship", vertices={"White", "Blue"},
+                    disposition="adjacent")
 
 
 # --- ValidationError ---

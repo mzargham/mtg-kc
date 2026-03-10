@@ -136,6 +136,17 @@ and adding a `boundedBy` cardinality restriction.
 A `kc:Complex` is a collection of elements (`kc:hasElement`) with a SHACL boundary-closure
 constraint: if a simplex is in the complex, all its boundary elements must also be in the complex.
 
+The Python `KnowledgeComplex` class maps to a `kc:Complex` individual in the RDF graph.
+Each `add_vertex` / `add_edge` / `add_face` call asserts both the element and its
+`kc:hasElement` membership. Boundary-closure validation (via `ComplexShape`) is enforced on
+every write via the **slice rule**: at every point during construction, the elements added
+so far must form a valid complex. This is a partial ordering — an element's boundary elements
+must precede it, but types can be interleaved (e.g., vertex, vertex, edge, vertex, edge, ...).
+The demo uses the simpler strategy of adding all vertices, then all edges, then all faces.
+
+For temporal complex interpretation (where insertion order carries meaning), see
+`docs/issues/temporal-ordering.md`.
+
 ### Orientation
 
 All simplices in this demo are **unoriented**. The boundary operator (`kc:boundedBy`) returns

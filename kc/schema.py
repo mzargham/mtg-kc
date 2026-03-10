@@ -6,8 +6,12 @@ Public API. Never exposes rdflib, pyshacl, or owlrl objects.
 Internal structure mirrors the 2x2 responsibility map:
   {topological, ontological} x {OWL, SHACL}
 
-Both OWL and SHACL graphs are maintained internally.
-add_vertex_type / add_edge_type / add_face_type each write to both.
+The core ontology defines KC:Element as the base class for all simplices,
+with KC:Vertex (k=0), KC:Edge (k=1), KC:Face (k=2) as subclasses.
+add_vertex_type / add_edge_type / add_face_type each declare a user type
+as a subclass of the appropriate simplex class and write to both internal
+OWL and SHACL graphs.
+
 dump_owl() and dump_shacl() return merged (core + user) Turtle strings.
 """
 
@@ -65,7 +69,9 @@ class SchemaBuilder:
     """
     Author a knowledge complex schema: vertex types, edge types, face types.
 
-    Each add_*_type call writes to both internal OWL and SHACL graphs.
+    Each add_*_type call declares a new OWL subclass of the appropriate
+    KC:Element subclass (Vertex, Edge, or Face) and creates a corresponding
+    SHACL node shape. Both OWL and SHACL graphs are maintained internally.
     dump_owl() / dump_shacl() return the full merged Turtle strings.
 
     Parameters
@@ -102,7 +108,7 @@ class SchemaBuilder:
 
     def add_vertex_type(self, name: str) -> "SchemaBuilder":
         """
-        Declare a new vertex type (OWL subclass of KC:Vertex + SHACL node shape).
+        Declare a new vertex type (OWL subclass of KC:Vertex, a KC:Element, + SHACL node shape).
 
         REQ-SCHEMA-02
 
@@ -124,7 +130,7 @@ class SchemaBuilder:
         attributes: dict[str, VocabDescriptor | Any] | None = None,
     ) -> "SchemaBuilder":
         """
-        Declare a new edge type (OWL subclass of KC:Edge + SHACL property shapes).
+        Declare a new edge type (OWL subclass of KC:Edge, a KC:Element, + SHACL property shapes).
 
         REQ-SCHEMA-03
 
@@ -149,7 +155,7 @@ class SchemaBuilder:
         attributes: dict[str, Any] | None = None,
     ) -> "SchemaBuilder":
         """
-        Declare a new face type (OWL subclass of KC:Face + SHACL property shapes).
+        Declare a new face type (OWL subclass of KC:Face, a KC:Element, + SHACL property shapes).
 
         REQ-SCHEMA-04
 
