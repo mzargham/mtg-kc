@@ -105,7 +105,7 @@ The notebook is published to GitHub Pages via GitHub Actions (`.github/workflows
 
 1. **Export locally:**
    ```bash
-   uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run
+   uv run marimo export html demo/demo.py -o _site/index.html
    ```
 
 2. **Review in browser:** Open `_site/index.html` and verify:

@@ -119,7 +119,7 @@ Before deployment can proceed, a human must review the HTML export locally:
 
 ```bash
 # 1. Export the notebook
-uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run
+uv run marimo export html demo/demo.py -o _site/index.html
 
 # 2. Open _site/index.html in your browser and verify the rendering
 

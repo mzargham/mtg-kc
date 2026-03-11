@@ -30,7 +30,7 @@ app = marimo.App(width="medium")
 # ============================================================
 # Shared imports
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_imports():
     import marimo as mo
     import sys as _sys
@@ -77,7 +77,7 @@ def cell_imports():
 # ============================================================
 # Cell 0: Title & Introduction
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_0_intro(mo):
     mo.md("""
 # Knowledge Complex: The MTG Color Wheel
@@ -134,7 +134,7 @@ alone.
 # ============================================================
 # Cell 1: Schema Authoring + Instance Build
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
     sb = SchemaBuilder(namespace="mtg")
 
@@ -208,7 +208,7 @@ directly; the internal representation is accessible via `dump_owl()` and
 # ============================================================
 # Cell 2: The Five Colors
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_2_colors(mo, nx, plt, np, kc, extract_attr):
     _color_names = ["White", "Blue", "Black", "Red", "Green"]
     _color_hex = {
@@ -315,7 +315,7 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
 # ============================================================
 # Cell 3: The Ten Pairs
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_3_pairs(mo, kc, extract_attr):
     _graph_ttl = kc.dump_graph()
 
@@ -386,7 +386,7 @@ the key to discovering face structure.
 # ============================================================
 # Cell 4: Verification (H4)
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_4_verification(mo, kc, ValidationError):
     _n_v = len(kc.query("vertices"))
     _n_e = len(kc.query("edges_by_disposition"))
@@ -440,7 +440,7 @@ when we try to add a malformed one.
 # ============================================================
 # Cell 5: Discovery (H5)
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_5_discovery(mo, pd, kc, extract_attr):
     _df = kc.query("faces_by_edge_pattern")
 
@@ -561,7 +561,7 @@ but a classification that emerged from counting edge dispositions.
 # ============================================================
 # Cell 6: Promotion
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
     sb.promote_to_attribute("ColorTriple", "structure",
                             vocab("shard", "wedge"), required=True)
@@ -619,7 +619,7 @@ is atomic across OWL and SHACL.
 # ============================================================
 # Cell 7: Horizon
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_7_horizon(mo):
     mo.md("""
 ## 7. Horizon
@@ -672,7 +672,7 @@ but a practical tool for understanding how they combine in individuals.
 # ============================================================
 # Cell 8: References & Acknowledgements
 # ============================================================
-@app.cell
+@app.cell(hide_code=True)
 def cell_8_references(mo):
     mo.md("""
 ## References & Acknowledgements

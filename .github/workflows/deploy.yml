@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ ! -f _review/approved.sha ]; then
             echo "::error::No review approval found. See CLAUDE.md or README.md for the review process."
-            echo "::error::Run: uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run"
+            echo "::error::Run: uv run marimo export html demo/demo.py -o _site/index.html"
             echo "::error::Then: git rev-parse HEAD > _review/approved.sha"
             exit 1
           fi
@@ -67,10 +67,9 @@ jobs:
 
       - name: Export notebook
         run: |
-          uv run marimo export html-wasm \
+          uv run marimo export html \
             demo/demo.py \
-            -o _site/index.html \
-            --mode run
+            -o _site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

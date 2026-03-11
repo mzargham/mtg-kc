@@ -77,7 +77,7 @@ Grep and fix all remaining `pattern`/`ooa`/`oaa` references across docs and demo
 
 ```bash
 # Local smoke test of the export command
-uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run
+uv run marimo export html demo/demo.py -o _site/index.html
 
 # After push: check workflow status
 gh run list --workflow=deploy.yml --limit=1
