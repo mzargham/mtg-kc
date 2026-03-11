@@ -61,3 +61,5 @@ uv run pytest tests/ -v
 | 2026-03-10 | Fix H6 test false positive | Rephrased docstring to avoid regex match on "from rdflib" in comment text. |
 | 2026-03-11 | Notebook not rendering cells 1–6 | Fixed three marimo patterns: (1) display elements must be bare statements, not returned in tuples; (2) `mo.callout()` has no `title` param in this version; (3) `mo.ui.tabs()` replaces deprecated `mo.tabs()`; (4) `_`-prefixed variables are cell-private, not exported (`_np` → `np`). |
 | 2026-03-11 | Add runtime warning | Added load-time warning in intro cell + `mo.status.spinner()` around instance build (~30-60s SHACL validation). |
+| 2026-03-11 | Persona cards show only 1 behavior | Fixed `extract_attr` regex to handle rdflib Turtle comma-separated multi-value serialization. All 3 example behaviors now display per card. |
+| 2026-03-11 | Shard/wedge not essay terms | Updated discovery narrative: "Compare with the source essay" → "Compare with MTG community knowledge". Shard/wedge are MTG community lore (*Shards of Alara*, *Khans of Tarkir*), not essay terms — topology independently reproduces community knowledge. |

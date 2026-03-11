@@ -53,13 +53,21 @@ def cell_imports():
     from demo_instance import build_mtg_instance
 
     def extract_attr(ttl, element_id, attr):
-        """Extract attribute values for an element from Turtle dump."""
-        _pattern = _re.compile(rf'mtg:{attr}\s+"([^"]*)"')
+        """Extract attribute values for an element from Turtle dump.
+
+        Handles rdflib Turtle serialization where multiple values for the
+        same property are comma-separated across lines.
+        """
+        _prop_pattern = _re.compile(
+            rf'mtg:{attr}\s+((?:"[^"]*"(?:\s*,\s*)*\s*)+)',
+            _re.DOTALL,
+        )
+        _val_pattern = _re.compile(r'"([^"]*)"')
         for _block in ttl.split("\n\n"):
             if element_id in _block:
-                _matches = _pattern.findall(_block)
-                if _matches:
-                    return _matches
+                _match = _prop_pattern.search(_block)
+                if _match:
+                    return _val_pattern.findall(_match.group(1))
         return []
 
     return (mo, pd, nx, plt, np, SchemaBuilder, vocab, text, ValidationError,
@@ -106,7 +114,7 @@ triangles subdivide into **shards** (3 consecutive colors) and **wedges**
 (2 colors flanking a gap). We'll discover this classification from the topology
 alone.
 
-## Roadmap
+## Table of Contents
 
 1. **Schema** — define types and attributes with the `SchemaBuilder` DSL
 2. **Colors** — meet the five colors and their philosophies
@@ -115,6 +123,10 @@ alone.
 5. **Discovery** — SPARQL reveals shard/wedge structure without pre-assertion
 6. **Promotion** — codify the discovery; observe schema/data tension
 7. **Horizon** — where this goes next
+
+> **Note:** Initial load takes ~30–60 seconds while the framework verifies
+> all elements against the SHACL schema. A spinner will appear below
+> while this runs.
 """)
     return
 
@@ -171,7 +183,9 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
     })
 
     # Build the full instance (25 elements — takes ~30s for SHACL validation)
-    kc = build_mtg_instance(schema=sb)
+    with mo.status.spinner(title="Building knowledge complex",
+                           subtitle="Validating 25 elements against SHACL schema ..."):
+        kc = build_mtg_instance(schema=sb)
 
     mo.vstack([
         mo.md("""
@@ -461,7 +475,7 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
             "Face": _f, "Clan": _clan,
             "Adj edges": _r["adjacent"], "Opp edges": _r["opposite"],
             "Discovered": _r["discovered_structure"],
-            "Essay says": _es,
+            "Community says": _es,
             "Match": "yes" if _r["discovered_structure"] == _es else "NO",
         })
     _comp_df = pd.DataFrame(_comparison)
@@ -513,13 +527,15 @@ This classification emerges from the topology alone — no pre-assertion needed.
 """),
         mo.as_html(_comp_df),
         mo.md("""
-### Compare with the source essay
+### Compare with MTG community knowledge
 
-The essay "The MTG Color Wheel (&amp; Humanity)" independently classifies
-these 10 triples as shards or wedges. Does our topological discovery agree?
+The terms "shard" and "wedge" are not from the essay — they come from
+Magic: The Gathering community lore (named after the card sets *Shards of Alara*
+and the wedge-colored *Khans of Tarkir* clans). We initially called them "ooa" and "oaa" for opposite-opposite-adjacent and opposite-adjacent-adjacent, respectively. Our knowledge complex
+independently surfaced a relevant topological feature but the MTG community forums validated that this feature is semantically meaningful.
 """),
         mo.callout(
-            mo.md("**Result:** All 10 classifications match. Topology reproduces domain knowledge."),
+            mo.md("**Result:** All 10 classifications match. Topology reproduces community knowledge."),
             kind="success" if _all_match else "warn",
         ),
         mo.md("""
