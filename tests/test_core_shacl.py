@@ -123,6 +123,32 @@ def test_open_triangle_face_fails():
     assert not conforms, "Expected open-triangle face to fail SHACL."
 
 
+def test_fan_triangle_face_fails():
+    """REQ-CORE-05, H2: face with 3 edges sharing a hub vertex but not forming a cycle must fail.
+
+    Fan pattern: v1-v2, v1-v3, v1-v4 — all 3 edges share v1 but the other
+    endpoints (v2, v3, v4) are all distinct and unconnected. 4 distinct vertices,
+    not 3 — cannot form a closed triangle.
+    """
+    g = Graph()
+    for v in [EX.v1, EX.v2, EX.v3, EX.v4]:
+        g.add((v, RDF.type, KC.Vertex))
+    edges = [
+        (EX.e12, EX.v1, EX.v2),
+        (EX.e13, EX.v1, EX.v3),
+        (EX.e14, EX.v1, EX.v4),
+    ]
+    for e, v_a, v_b in edges:
+        g.add((e, RDF.type, KC.Edge))
+        g.add((e, KC.boundedBy, v_a))
+        g.add((e, KC.boundedBy, v_b))
+    g.add((EX.f1, RDF.type, KC.Face))
+    for e, _, _ in edges:
+        g.add((EX.f1, KC.boundedBy, e))
+    conforms, report = _validate(g)
+    assert not conforms, "Expected fan-pattern face to fail SHACL."
+
+
 def test_face_wrong_edge_count_fails():
     """REQ-CORE-03, REQ-VV-04: face with 2 edges must fail SHACL."""
     g = _minimal_valid_edge()
