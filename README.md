@@ -99,6 +99,31 @@ pytest tests/ -v
 marimo run demo/demo.py
 ```
 
+## Deployment
+
+The notebook is published to GitHub Pages via GitHub Actions. The pipeline runs
+tests first, then checks for human review approval before building and deploying.
+
+Before deployment can proceed, a human must review the HTML export locally:
+
+```bash
+# 1. Export the notebook
+uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run
+
+# 2. Open _site/index.html in your browser and verify the rendering
+
+# 3. Record approval
+git rev-parse HEAD > _review/approved.sha
+
+# 4. Commit and push
+git add _review/approved.sha
+git commit -m "approve HTML export for $(git rev-parse --short HEAD)"
+git push
+```
+
+CI verifies that the SHA in `_review/approved.sha` matches the current `HEAD`.
+If new commits are pushed after the review, the build fails and asks for re-review.
+
 ## References & Acknowledgements
 
 This project uses the five Magic: The Gathering colors as its test case. The philosophical framework for the color wheel is drawn from the following source, which we gratefully acknowledge:
