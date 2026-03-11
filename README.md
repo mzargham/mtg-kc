@@ -33,7 +33,7 @@ models/
     __init__.py
 
 demo/                        # Layer 3: concrete instance + notebook
-  demo_instance.py           #   MTG color pentagon (5 colors, 10 edges, 10 faces)
+  demo_instance.py           #   MTG color wheel (5 colors, 10 edges, 10 faces)
   demo.py                    #   marimo notebook
 
 tests/
@@ -77,13 +77,23 @@ from kc.graph import KnowledgeComplex
 sb = build_mtg_schema()
 kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
 
-# Layer 3: concrete data
-kc.add_vertex("White", type="Color")
-kc.add_vertex("Blue",  type="Color")
-kc.add_edge("WU", type="ColorPair", vertices={"White", "Blue"}, disposition="adjacent")
-# ... add remaining vertices, edges, faces
-# add_face triggers SHACL validation on write
+# Layer 3: concrete data — vocab and text attributes
+kc.add_vertex("White", type="Color",
+    goal="peace", method="order",
+    persona="Believes the solution to suffering is...",
+    at_best="Protective and principled.",
+    at_worst="Rigid and authoritarian.",
+    example_behaviors=["Creating fair rules", "Building institutions"])
 
+kc.add_edge("WU", type="ColorPair",
+    vertices={"White", "Blue"}, disposition="adjacent",
+    guild="azorius", theme="design",
+    persona="The marriage of structure and knowledge.",
+    at_best="Principled innovation.", at_worst="Bureaucratic control.",
+    example_behaviors=["Designing governance systems"])
+
+# add_face triggers SHACL validation on write
+# SPARQL discovers shard/wedge classification from edge dispositions
 results = kc.query("faces_by_edge_pattern")
 ```
 

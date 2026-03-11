@@ -9,11 +9,11 @@ The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is suff
 ## Scope Constraints
 
 - End-to-end demonstrator only; not production code
-- One fixed demo model: MTG color pentagon
+- One fixed demo model: MTG color wheel
 - OWL and SHACL are internal representations; never user-facing
 - SPARQL encapsulated as named templates; not user-facing
-- Face pattern discovery (`ooa`/`oaa`) is demonstrated via query, not pre-asserted
-- Promoting a discovered pattern to a first-class attribute is the closing demonstration
+- Face structure discovery (`shard`/`wedge`) is demonstrated via query, not pre-asserted
+- Promoting a discovered structure to a required attribute is the closing demonstration
 
 ---
 
@@ -41,9 +41,9 @@ The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is suff
 - Pentagon opposites: W-B, W-R, U-G, U-R, B-G
 
 **Face type:** `ColorTriple` (subclass of `KC:Face`)
-- Attribute: `mtg:pattern` ∈ `{"ooa", "oaa"}` — **not pre-asserted in demo instance**
+- Attribute: `mtg:structure` ∈ `{"shard", "wedge"}` — **not pre-asserted in demo instance**
 - 10 valid triangles exist in the 10-edge complete graph
-- Pattern is discovered via SPARQL; promotion to explicit attribute is the closing exercise
+- Structure is discovered via SPARQL; promotion to required attribute is the closing exercise
 
 ---
 
@@ -95,7 +95,7 @@ sb.add_edge_type(
 
 sb.add_face_type(
     "ColorTriple",
-    attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}}
+    attributes={"structure": {"vocab": vocab("shard", "wedge"), "required": False}}
 )
 
 sb.dump_owl()    # → Turtle string (kc_core + user schema, merged)
@@ -130,14 +130,14 @@ for substitution.
 ```python
 sb.promote_to_attribute(
     type="ColorTriple",
-    attribute="pattern",
-    vocab=vocab("ooa", "oaa"),
+    attribute="structure",
+    vocab=vocab("shard", "wedge"),
     required=True    # upgrade: was optional, now required
 )
 ```
 
 Internally updates OWL property definition and SHACL shape constraint atomically.
-After this call, re-validating the graph fails on faces lacking `pattern` — motivating
+After this call, re-validating the graph fails on faces lacking `structure` — motivating
 the annotation step and the next work item.
 
 Deliverable: `kc/schema.py`, `kc/graph.py`, `kc/exceptions.py`, `kc/__init__.py`
@@ -146,7 +146,7 @@ Deliverable: `kc/schema.py`, `kc/graph.py`, `kc/exceptions.py`, `kc/__init__.py`
 
 - 5 `Color` vertices: White, Blue, Black, Red, Green
 - 10 `ColorPair` edges with correct `disposition` values
-- 10 valid `ColorTriple` faces — no `pattern` attribute asserted
+- 10 valid `ColorTriple` faces — no `structure` attribute asserted
 - All faces must pass SHACL structural validation before notebook proceeds
 
 Deliverable: `demo/demo_instance.py`
@@ -158,7 +158,7 @@ Narrative structure:
 1. **Schema authoring** — build `SchemaBuilder`; show `dump_owl()` / `dump_shacl()` cells
 2. **Instance loading** — load MTG instance; graph visualization colored by `disposition`
 3. **Verification** — run SHACL; all faces pass; show one deliberately broken face and its report
-4. **Discovery** — run `faces_by_edge_pattern` query; show `ooa`/`oaa` split in table; observe the distinction is meaningful and not yet captured in the model
+4. **Discovery** — run `faces_by_edge_pattern` query; show `shard`/`wedge` split in table; observe the distinction is meaningful and not yet captured in the model
 5. **Promotion** — call `promote_to_attribute`; show updated `dump_shacl()`; re-validate; show failures; motivate completing the annotation
 6. **Horizon** — stub a `Person` vertex type; observe it motivates `PersonColorAffinity` edge type and new face types; leave as exercise
 
@@ -191,5 +191,5 @@ tests trace to requirement IDs.
 | H2 | Topological limit documented | Closed-triangle constraint is in SHACL `sh:sparql`; comment explains why OWL cannot express it |
 | H3 | Single-call invariant | `add_edge_type` and `promote_to_attribute` each produce changes in both OWL and SHACL dumps |
 | H4 | Verification works | SHACL catches a malformed face and produces a readable report |
-| H5 | Discovery works | SPARQL reveals `ooa`/`oaa` split without it being pre-asserted |
+| H5 | Discovery works | SPARQL reveals `shard`/`wedge` split without it being pre-asserted |
 | H6 | API opacity | The notebook never imports `rdflib`, `pyshacl`, or `owlrl` directly |

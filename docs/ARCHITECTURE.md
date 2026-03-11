@@ -8,7 +8,7 @@ The Python package exists to hide this table from the user.
 |  | **OWL** | **SHACL** |
 |---|---|---|
 | **Topological** | `KC:Element` base class; `KC:Vertex`, `KC:Edge`, `KC:Face` as subclasses. `KC:Edge` has exactly 2 `boundedBy` (Vertex); `KC:Face` has exactly 3 `boundedBy` (Edge). `KC:Complex` as collection of elements via `KC:hasElement`. | Boundary vertices are distinct; boundary edges of a face form a closed triangle; boundary-closure of a complex (all instance-level; requires `sh:sparql`) |
-| **Ontological** | Concrete subclasses and their allowed attributes (`ColorPair` with `disposition`; `ColorTriple` with `pattern`); property domain/range declarations | Controlled vocabulary enforcement (e.g. `disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
+| **Ontological** | Concrete subclasses and their allowed attributes (`ColorPair` with `disposition`; `ColorTriple` with `structure`); property domain/range declarations | Controlled vocabulary enforcement (e.g. `disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
 
 ### Why Both OWL and SHACL at Each Layer
 
@@ -122,7 +122,8 @@ tier above it.
 |---|---|---|---|---|
 | 1. Structural | Core topological classes and properties | `kc:Element`, `kc:Vertex`, `kc:boundedBy`, `kc:hasElement` | Core (static OWL) | Fixed in `kc_core.ttl`; never modified |
 | 2. Type | Domain-specific classes extending core types | `mtg:Color`, `mtg:ColorPair`, `mtg:ColorTriple` | Model (authored via SchemaBuilder) | `add_*_type()` generates OWL subclasses |
-| 3. Value | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"ooa"`, `"oaa"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
+| 3. Value (vocab) | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"shard"`, `"wedge"`, `"azorius"`, `"design"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
+| 3. Value (text) | Free-text string attributes | `"persona"`, `"at_best"`, `"example_behaviors"` | Model (authored via `text()`) | `text()` generates SHACL `sh:datatype xsd:string` |
 
 A model family adds type terms (tier 2) that subclass structural terms (tier 1), and adds
 value terms (tier 3) that constrain attributes on those types. The core owns tier 1 and
@@ -154,11 +155,11 @@ Some constraints cannot be expressed in SHACL and are enforced by the Python API
 
 The MTG demo uses a single concrete edge type (`ColorPair`) with a controlled-vocabulary
 attribute (`disposition`) rather than two subclasses (`AllyEdge`, `EnemyEdge`). Similarly,
-`ColorTriple` uses an attribute (`pattern`) rather than two face subclasses.
+`ColorTriple` uses an attribute (`structure`) rather than two face subclasses.
 
 **Rationale:** The model is simple enough that attributes suffice. The framework still supports
 multiple concrete subclasses with different attribute schemas — the demo simply does not require
-that power. Keeping the demo flat makes the discovery step more legible: the `ooa`/`oaa` split
+that power. Keeping the demo flat makes the discovery step more legible: the `shard`/`wedge` split
 is visible in the data *before* it is promoted to a schema-level concern.
 
 **Implication:** The `Person` horizon example (WP5 step 6) motivates the subclass path — a
@@ -205,6 +206,45 @@ They do not return just the user-defined fragment.
 **Rationale:** The merged graph is what `pyshacl` and `owlrl` operate on. Showing the full
 graph makes the system inspectable and demonstrates that user types genuinely extend (not
 replace) the core ontology.
+
+### DD6: Shared-Domain Removal (`_set_owl_domain`)
+
+When the same property name (e.g., `persona`) appears on multiple types (Color, ColorPair,
+ColorTriple), the OWL `rdfs:domain` assertion must be handled carefully. Naively adding
+`rdfs:domain` for each type causes RDFS inference to classify any individual with that
+property as a member of *all* types — a vertex with `persona` would be inferred to be a
+face, violating the type hierarchy.
+
+**Resolution:** `SchemaBuilder._set_owl_domain()` tracks property-to-type mappings in
+`_attr_domains`. When a property first appears, its domain is set to the declaring type.
+When the same property appears on a second type, the `rdfs:domain` triple is *removed*
+from the OWL graph, leaving the property without a domain restriction. SHACL property shapes
+still enforce per-type constraints correctly (each type's NodeShape has its own property shape).
+
+**Rationale:** This is a 2×2 architecture validation — OWL domain semantics (inference-based,
+open-world) conflict with SHACL constraint semantics (validation-based, closed-world).
+The shared-domain fix demonstrates that both layers must be managed together, even when they
+express similar-looking rules.
+
+### DD7: Two Attribute Descriptor Types — `vocab()` vs. `text()`
+
+The ontological layer supports two kinds of attributes:
+
+- **`vocab(*values)`** — controlled vocabulary. Generates an OWL `DatatypeProperty` with
+  `rdfs:comment` listing allowed values, and a SHACL `sh:in` constraint. Values are
+  validated at write time. Example: `disposition ∈ {"adjacent", "opposite"}`.
+
+- **`text(required=True, multiple=False)`** — free-text string. Generates an OWL
+  `DatatypeProperty` with `rdfs:range xsd:string`, and a SHACL property shape with
+  `sh:datatype xsd:string` (no `sh:in`). Used for essay-derived prose attributes.
+  Example: `persona`, `at_best`, `at_worst`.
+
+Both descriptors support `required` and `multiple` flags. When `multiple=True`, the SHACL
+shape has no `sh:maxCount`, and the Python API accepts list values (each item becomes a
+separate triple).
+
+The dict-style spec `{"vocab": vocab(...), "required": False}` or
+`{"text": text(), "required": True}` is the legacy syntax; bare descriptors are preferred.
 
 ---
 

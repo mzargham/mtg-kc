@@ -186,7 +186,7 @@ def test_h4_verification_catches_malformed_face():
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# H5: Discovery works — SPARQL reveals ooa/oaa without pre-assertion
+# H5: Discovery works — SPARQL reveals shard/wedge without pre-assertion
 # ═══════════════════════════════════════════════════════════════════════════
 
 def test_h5_discovery_without_pre_assertion():

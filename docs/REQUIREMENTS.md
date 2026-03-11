@@ -86,6 +86,25 @@ method, `dump_owl()` and `dump_shacl()` SHALL both reflect the updated attribute
 `SchemaBuilder` SHALL NOT expose `rdflib`, `pyshacl`, or `owlrl` objects in its public API.
 *[Cross-ref: H6]*
 
+### REQ-SCHEMA-10
+`text(required=True, multiple=False)` SHALL return a `TextDescriptor` that generates an OWL
+`DatatypeProperty` with `rdfs:range xsd:string` and a SHACL property shape with
+`sh:datatype xsd:string`. The `required` flag SHALL control `sh:minCount` (1 or 0).
+The `multiple` flag SHALL control `sh:maxCount` (absent when True, 1 when False).
+`text()` SHALL NOT generate `sh:in` constraints (unlike `vocab()`).
+
+### REQ-SCHEMA-11
+`SchemaBuilder.export(path, query_dirs=None)` SHALL write the schema to a directory as
+`ontology.ttl` + `shapes.ttl`, optionally copying SPARQL template files from `query_dirs`.
+`SchemaBuilder.load(path)` SHALL reconstruct a `SchemaBuilder` from an exported directory
+with type registry, namespace, and OWL/SHACL graphs intact. The roundtrip SHALL produce
+isomorphic OWL and SHACL graphs.
+
+### REQ-SCHEMA-12
+When the same property name appears on multiple types, `SchemaBuilder` SHALL remove the
+`rdfs:domain` triple from the OWL graph to prevent RDFS inference from cross-classifying
+individuals. Per-type SHACL constraints SHALL remain unaffected. *[Cross-ref: DD6]*
+
 ---
 
 ## REQ-GRAPH: KnowledgeComplex API
@@ -131,6 +150,17 @@ registered. It SHALL NOT accept arbitrary SPARQL strings.
 `KnowledgeComplex` SHALL NOT expose `rdflib`, `pyshacl`, or `owlrl` objects in its public API.
 *[Cross-ref: H6]*
 
+### REQ-GRAPH-10
+`KnowledgeComplex.export(path)` SHALL write the schema (ontology.ttl, shapes.ttl), instance
+data (instance.ttl), and SPARQL templates (queries/) to a directory.
+`KnowledgeComplex.load(path)` SHALL reconstruct a `KnowledgeComplex` from an exported
+directory with schema, instance data, and query templates intact.
+
+### REQ-GRAPH-11
+`KnowledgeComplex.add_vertex()`, `add_edge()`, and `add_face()` SHALL accept list values for
+attributes declared with `text(multiple=True)`. Each list item SHALL be asserted as a
+separate RDF triple.
+
 ---
 
 ## REQ-QUERY: Named SPARQL Templates
@@ -138,7 +168,7 @@ registered. It SHALL NOT accept arbitrary SPARQL strings.
 ### REQ-QUERY-01
 The package SHALL provide a `faces_by_edge_pattern` query template that returns, for each
 face, the face ID and the multiset of `disposition` values of its three edges (enabling
-`ooa`/`oaa` classification). *[Cross-ref: H5]*
+`shard`/`wedge` classification). *[Cross-ref: H5]*
 
 ### REQ-QUERY-02
 The package SHALL provide a `vertices` query template that returns all vertex individuals
@@ -172,11 +202,11 @@ The demo instance SHALL contain exactly 10 `ColorTriple` faces, one for each val
 in the 10-edge graph. Each face SHALL pass SHACL structural validation.
 
 ### REQ-DEMO-05
-No `ColorTriple` face in the initial demo instance SHALL have a `pattern` attribute asserted.
-The `ooa`/`oaa` classification SHALL be discoverable only via query. *[Cross-ref: H5]*
+No `ColorTriple` face in the initial demo instance SHALL have a `structure` attribute asserted.
+The `shard`/`wedge` classification SHALL be discoverable only via query. *[Cross-ref: H5]*
 
 ### REQ-DEMO-06
-After calling `promote_to_attribute("ColorTriple", "pattern", vocab("ooa","oaa"), required=True)`
+After calling `promote_to_attribute("ColorTriple", "structure", vocab("shard","wedge"), required=True)`
 and re-validating the demo instance, ALL 10 faces SHALL fail SHACL validation (missing required
 attribute), demonstrating the schema/data tension. *[Cross-ref: H4, H3]*
 
@@ -203,7 +233,7 @@ invalid disposition value, face referencing non-existent edges.
 
 ### REQ-VV-05 (maps to H5)
 Tests SHALL verify that `faces_by_edge_pattern` correctly classifies all 10 MTG triangles
-into `ooa` and `oaa` groups and that the ground-truth classification matches the expected
+into `shard` and `wedge` groups and that the ground-truth classification matches the expected
 MTG color wheel topology.
 
 ### REQ-VV-06 (maps to H6)

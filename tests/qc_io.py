@@ -165,7 +165,7 @@ def cell_3_export_full_kc(mo, tempfile, Path, build_mtg_instance):
     mo.output.replace(mo.md(f"""
 ## 3. Export a Concrete Knowledge Complex
 
-`build_mtg_instance()` constructs the full MTG color pentagon:
+`build_mtg_instance()` constructs the full MTG color wheel:
 **{n_vertices_full} vertices, {n_edges_full} edges, {n_faces_full} faces** — all with enriched
 essay-derived attributes (persona, at_best, at_worst, example_behaviors, etc.).
 

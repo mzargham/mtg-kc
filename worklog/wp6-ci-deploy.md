@@ -28,6 +28,7 @@ Reconcile primary docs with the actual codebase. The implementation is ahead of 
 
 **PLAN.md → ROADMAP.md:**
 - Replace the original WP0–WP6 plan with a forward-looking roadmap
+- Make a worklog directory README.md that preserves the plan data and compares it to what actually happened
 - Completed work: summarized from worklogs
 - Open work: links to `docs/issues/`
 - Hypothesis test results: which criteria were validated
@@ -101,3 +102,9 @@ Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`, no
 | 2026-03-10 | CI/CD workflow | Created `.github/workflows/deploy.yml` with pytest gate + HTML-WASM export + Pages deploy. Branch `wp6-ci-deploy`. |
 | 2026-03-10 | GitHub Pages source | User set Pages source to "GitHub Actions" in repo settings. Confirmed via `gh api`. |
 | 2026-03-10 | Expand WP6 scope to include repo finalization | Added Section B (doc reconciliation) and Section C (stale reference cleanup). PLAN.md → ROADMAP.md. ARCHITECTURE.md, REQUIREMENTS.md, README.md updates queued. |
+| 2026-03-10 | Human review gate for deployment | Added `_review/approved.sha` check to `deploy.yml`. Created top-level `CLAUDE.md`. Updated `README.md` with deployment section. |
+| 2026-03-10 | Terminology: color pentagon → color wheel | 11 occurrences across README, demo, tests, docs, worklog. Created `docs/issues/terminology-audit.md`. |
+| 2026-03-10 | Terminology: ooa/oaa → shard/wedge in docs | PLAN.md, REQUIREMENTS.md, ARCHITECTURE.md, SPARQL query, test comments, graph.py docstring. Test fixtures unchanged. |
+| 2026-03-10 | Doc freshness: ARCHITECTURE.md | Added DD6 (shared-domain), DD7 (text vs vocab), updated Vocabulary Tiers, fixed DD1 and 2×2 table. |
+| 2026-03-10 | Doc freshness: REQUIREMENTS.md | Added REQ-SCHEMA-10/11/12, REQ-GRAPH-10/11. Updated REQ-DEMO-05/06. |
+| 2026-03-10 | Doc freshness: README.md | Updated usage sketch with enriched schema (text/vocab attributes). |

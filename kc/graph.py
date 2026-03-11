@@ -319,7 +319,7 @@ class KnowledgeComplex:
         boundary : list[str]
             Exactly 3 edge IDs forming the boundary of this face.
         **attributes : Any
-            Attribute values (e.g. pattern="ooa").
+            Attribute values (e.g. clan="esper").
 
         Raises
         ------

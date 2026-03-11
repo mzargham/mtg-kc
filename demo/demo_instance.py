@@ -1,7 +1,7 @@
 """
 demo/demo_instance.py
 
-MTG color pentagon knowledge complex — full instance construction.
+MTG color wheel knowledge complex — full instance construction.
 Layer 3: concrete data built using the models.mtg schema (layer 2)
 and the kc framework (layer 1).
 
@@ -17,7 +17,7 @@ from models.mtg import build_mtg_schema, QUERIES_DIR
 
 
 def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
-    """Build the MTG color pentagon instance.
+    """Build the MTG color wheel instance.
 
     If no schema is provided, builds one from models.mtg.
     """

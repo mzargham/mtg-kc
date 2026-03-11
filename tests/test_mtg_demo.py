@@ -113,7 +113,7 @@ def test_structure_discovery_shard_wedge(mtg_kc):
     """REQ-DEMO-05, REQ-VV-05: SPARQL correctly classifies all 10 faces into shard/wedge."""
     df = mtg_kc.query("faces_by_edge_pattern")
     # Derive structure from the three disposition values
-    # shard: 1 opposite + 2 adjacent (oaa); wedge: 2 opposite + 1 adjacent (ooa)
+    # shard: 1 opposite + 2 adjacent edges; wedge: 2 opposite + 1 adjacent edge
     def classify(row):
         dispositions = sorted([row["d1"], row["d2"], row["d3"]])
         if dispositions.count("opposite") == 1:

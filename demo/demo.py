@@ -1,5 +1,5 @@
 """
-demo/demo.py — Marimo notebook: Knowledge Complex over MTG Color Pentagon
+demo/demo.py — Marimo notebook: Knowledge Complex over MTG Color Wheel
 
 Run:   marimo run demo/demo.py
 Edit:  marimo edit demo/demo.py
@@ -71,8 +71,8 @@ def cell_imports():
 # ============================================================
 @app.cell
 def cell_0_intro(mo):
-    return (mo.md("""
-# Knowledge Complex: The MTG Color Pentagon
+    intro = mo.md("""
+# Knowledge Complex: The MTG Color Wheel
 
 This notebook demonstrates the **knowledge complex** framework — a typed
 [simplicial complex](https://en.wikipedia.org/wiki/Simplicial_complex)
@@ -115,7 +115,8 @@ alone.
 5. **Discovery** — SPARQL reveals shard/wedge structure without pre-assertion
 6. **Promotion** — codify the discovery; observe schema/data tension
 7. **Horizon** — where this goes next
-"""),)
+""")
+    return intro,
 
 
 # ============================================================
@@ -177,7 +178,7 @@ def cell_1a_build_schema(SchemaBuilder, vocab, text):
 # ============================================================
 @app.cell
 def cell_1b_display_schema(mo, sb):
-    return (mo.vstack([
+    schema_output = mo.vstack([
         mo.md("""
 ## 1. Schema Authoring
 
@@ -191,7 +192,8 @@ directly; the internal representation is accessible via `dump_owl()` and
             "OWL Ontology (Turtle)": mo.md(f"```turtle\n{sb.dump_owl()}\n```"),
             "SHACL Shapes (Turtle)": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
         }),
-    ]),)
+    ])
+    return schema_output,
 
 
 # ============================================================
@@ -256,7 +258,7 @@ def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
         ],
         loc="lower right", fontsize=11,
     )
-    _ax.set_title("MTG Color Pentagon — K5 with Disposition", fontsize=14)
+    _ax.set_title("MTG Color Wheel — K5 with Disposition", fontsize=14)
     _ax.axis("off")
     plt.tight_layout()
 
@@ -294,7 +296,7 @@ def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
             title=_name, kind="info",
         ))
 
-    return (mo.vstack([
+    colors_output = mo.vstack([
         mo.md("""
 ## 2. The Five Colors
 
@@ -304,7 +306,8 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
 """),
         mo.as_html(_fig),
         mo.accordion({n: _color_cards[i] for i, n in enumerate(_color_names)}),
-    ]),)
+    ])
+    return colors_output,
 
 
 # ============================================================
@@ -351,7 +354,7 @@ def cell_3_pairs(mo, kc, extract_attr):
     _adj = ["WU", "UB", "BR", "RG", "GW"]
     _opp = ["WB", "WR", "UG", "UR", "BG"]
 
-    return (mo.vstack([
+    pairs_output = mo.vstack([
         mo.md("""
 ## 3. The Ten Pairs
 
@@ -372,7 +375,8 @@ the key to discovering face structure.
                 f"{p} — {_guild_map[p]}": _make_pair_card(p) for p in _opp
             }),
         }),
-    ]),)
+    ])
+    return pairs_output,
 
 
 # ============================================================
@@ -409,7 +413,7 @@ The framework rejects it immediately:
             title="SHACL validation failure (expected)", kind="danger",
         )
 
-    return (mo.vstack([
+    verification_output = mo.vstack([
         mo.md("""
 ## 4. Verification
 
@@ -423,7 +427,8 @@ when we try to add a malformed one.
 """),
         _counts,
         _error,
-    ]),)
+    ])
+    return verification_output,
 
 
 # ============================================================
@@ -497,7 +502,7 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
             title=f"{_fid} — {_clan.capitalize()}", kind="info",
         )
 
-    return (mo.vstack([
+    discovery_output = mo.vstack([
         mo.md("""
 ## 5. Discovery: Structure from Topology
 
@@ -541,7 +546,8 @@ but a classification that emerged from counting edge dispositions.
                 for r in _wedges
             }),
         }),
-    ]),)
+    ])
+    return discovery_output,
 
 
 # ============================================================
@@ -570,7 +576,7 @@ def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
             title="Schema enforcement", kind="danger",
         )
 
-    return (mo.vstack([
+    promotion_output = mo.vstack([
         mo.md("""
 ## 6. Promotion: Discovery to Schema
 
@@ -598,7 +604,8 @@ This is the **discovery-to-codification** workflow:
 The framework makes this loop safe: every step is validated, every change
 is atomic across OWL and SHACL.
 """),
-    ]),)
+    ])
+    return promotion_output,
 
 
 # ============================================================
@@ -606,7 +613,7 @@ is atomic across OWL and SHACL.
 # ============================================================
 @app.cell
 def cell_7_horizon(mo):
-    return (mo.md("""
+    horizon = mo.md("""
 ## 7. Horizon
 
 Two threads of future work extend this foundation in complementary directions.
@@ -650,7 +657,8 @@ sb.add_edge_type("PersonColorAffinity", attributes={
 
 The pentagon becomes a mirror: not just a taxonomy of philosophies,
 but a practical tool for understanding how they combine in individuals.
-"""),)
+""")
+    return horizon,
 
 
 # ============================================================
@@ -658,7 +666,7 @@ but a practical tool for understanding how they combine in individuals.
 # ============================================================
 @app.cell
 def cell_8_references(mo):
-    return (mo.md("""
+    references = mo.md("""
 ## References & Acknowledgements
 
 This project uses the five Magic: The Gathering colors as its test case.
@@ -678,7 +686,8 @@ All credit for the color wheel analysis belongs to the original author.
 of Hasbro, Inc. This project is not affiliated with, endorsed by, or sponsored
 by Wizards of the Coast. All game-related terminology is used for educational
 and analytical purposes under fair use.*
-"""),)
+""")
+    return references,
 
 
 if __name__ == "__main__":

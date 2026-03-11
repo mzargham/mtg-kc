@@ -1,8 +1,8 @@
 # models/mtg/queries/faces_by_edge_pattern.sparql
 #
 # For each face, return the face ID and the sorted multiset of disposition values
-# of its three edges. This enables ooa/oaa classification without pre-asserted
-# pattern attributes.
+# of its three edges. This enables shard/wedge classification without pre-asserted
+# structure attributes.
 #
 # REQ-QUERY-01, REQ-DEMO-05, REQ-VV-05
 #
