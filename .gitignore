@@ -24,3 +24,9 @@ Thumbs.db
 
 # Environment
 .env
+
+# Marimo session cache
+__marimo__/
+
+# Local HTML export (review before deploy)
+_site/
