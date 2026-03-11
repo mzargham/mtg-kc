@@ -138,7 +138,7 @@ If new commits are pushed after the review, the build fails and asks for re-revi
 
 This project uses the five Magic: The Gathering colors as its test case. The philosophical framework for the color wheel is drawn from the following source, which we gratefully acknowledge:
 
-- **"The MTG Color Wheel (& Humanity)"** by Homo Sabiens
+- **"The MTG Color Wheel (& Humanity)"** by Duncan Sabien
   - Original: <https://homosabiens.substack.com/p/the-mtg-color-wheel>
   - Local copy: [`references/the-mtg-color-wheel.md`](references/the-mtg-color-wheel.md)
 

@@ -36,7 +36,7 @@ def cell_imports():
     import sys as _sys
     import re as _re
     from pathlib import Path as _Path
-    import numpy as _np
+    import numpy as np
     import pandas as pd
     import networkx as nx
     import matplotlib as _mpl
@@ -62,7 +62,7 @@ def cell_imports():
                     return _matches
         return []
 
-    return (mo, pd, nx, plt, _np, SchemaBuilder, vocab, text, ValidationError,
+    return (mo, pd, nx, plt, np, SchemaBuilder, vocab, text, ValidationError,
             build_mtg_instance, extract_attr)
 
 
@@ -120,10 +120,10 @@ alone.
 
 
 # ============================================================
-# Cell 1a: Build schema (compute)
+# Cell 1: Schema Authoring
 # ============================================================
 @app.cell
-def cell_1a_build_schema(SchemaBuilder, vocab, text):
+def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
     sb = SchemaBuilder(namespace="mtg")
 
     sb.add_vertex_type("Color", attributes={
@@ -170,14 +170,9 @@ def cell_1a_build_schema(SchemaBuilder, vocab, text):
         "example_decks": text(multiple=True, required=False),
     })
 
-    return (sb,)
+    # Build the full instance (25 elements — takes ~30s for SHACL validation)
+    kc = build_mtg_instance(schema=sb)
 
-
-# ============================================================
-# Cell 1b: Display schema (display)
-# ============================================================
-@app.cell
-def cell_1b_display_schema(mo, sb):
     schema_output = mo.vstack([
         mo.md("""
 ## 1. Schema Authoring
@@ -193,23 +188,14 @@ directly; the internal representation is accessible via `dump_owl()` and
             "SHACL Shapes (Turtle)": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
         }),
     ])
-    return schema_output,
+    return sb, kc, schema_output
 
 
 # ============================================================
-# Cell 2a: Build instance (compute)
-# ============================================================
-@app.cell
-def cell_2a_build_instance(sb, build_mtg_instance):
-    kc = build_mtg_instance(schema=sb)
-    return (kc,)
-
-
-# ============================================================
-# Cell 2b: Pentagon visualization + color cards (display)
+# Cell 2: The Five Colors
 # ============================================================
 @app.cell
-def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
+def cell_2_colors(mo, nx, plt, np, kc, extract_attr):
     _color_names = ["White", "Blue", "Black", "Red", "Green"]
     _color_hex = {
         "White": "#F9FAF4", "Blue": "#0E68AB",
@@ -236,8 +222,8 @@ def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
 
     _G.add_edges_from(_adjacent_edges + _opposite_edges)
 
-    _angles = [_np.pi / 2 + 2 * _np.pi * i / 5 for i in range(5)]
-    _pos = {n: (_np.cos(a), _np.sin(a)) for n, a in zip(_color_names, _angles)}
+    _angles = [np.pi / 2 + 2 * np.pi * i / 5 for i in range(5)]
+    _pos = {n: (np.cos(a), np.sin(a)) for n, a in zip(_color_names, _angles)}
 
     _fig, _ax = plt.subplots(1, 1, figsize=(7, 7))
     _ax.set_aspect("equal")
@@ -282,7 +268,9 @@ def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
         _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
 
         _color_cards.append(mo.callout(
-            mo.md(f"""**Goal:** {_g} | **Method:** {_m}
+            mo.md(f"""### {_name}
+
+**Goal:** {_g} | **Method:** {_m}
 
 > *{_persona}*
 
@@ -293,7 +281,7 @@ def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
 **Example behaviors:**
 {_btext}
 """),
-            title=_name, kind="info",
+            kind="info",
         ))
 
     colors_output = mo.vstack([
@@ -337,7 +325,9 @@ def cell_3_pairs(mo, kc, extract_attr):
         _behaviors = extract_attr(_graph_ttl, _pid, "example_behaviors")
         _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
         return mo.callout(
-            mo.md(f"""**Guild:** {_guild} | **Theme:** {_theme}
+            mo.md(f"""### {_pid} — {_guild}
+
+**Theme:** {_theme}
 
 > *{_persona}*
 
@@ -348,7 +338,7 @@ def cell_3_pairs(mo, kc, extract_attr):
 **Example behaviors:**
 {_btext}
 """),
-            title=f"{_pid} — {_guild}", kind="info",
+            kind="info",
         )
 
     _adj = ["WU", "UB", "BR", "RG", "GW"]
@@ -367,7 +357,7 @@ split into two groups based on their position on the pentagon:
 This `disposition` attribute is asserted on every edge. It will later become
 the key to discovering face structure.
 """),
-        mo.tabs({
+        mo.ui.tabs({
             "Adjacent (pentagon edges)": mo.accordion({
                 f"{p} — {_guild_map[p]}": _make_pair_card(p) for p in _adj
             }),
@@ -389,8 +379,8 @@ def cell_4_verification(mo, kc, ValidationError):
     _n_f = len(kc.query("faces_by_edge_pattern"))
 
     _counts = mo.callout(
-        mo.md(f"**{_n_v} vertices** (Colors) + **{_n_e} edges** (ColorPairs) + **{_n_f} faces** (ColorTriples) = **{_n_v + _n_e + _n_f} elements** — all valid."),
-        title="Current complex", kind="success",
+        mo.md(f"**Current complex:** {_n_v} vertices (Colors) + {_n_e} edges (ColorPairs) + {_n_f} faces (ColorTriples) = **{_n_v + _n_e + _n_f} elements** — all valid."),
+        kind="success",
     )
 
     try:
@@ -398,10 +388,12 @@ def cell_4_verification(mo, kc, ValidationError):
             goal="chaos", method="order",
             persona="This should fail.", at_best="N/A.", at_worst="N/A.",
             example_behaviors=["Failing"])
-        _error = mo.callout(mo.md("Unexpectedly succeeded."), title="Error", kind="danger")
+        _error = mo.callout(mo.md("Unexpectedly succeeded."), kind="danger")
     except ValidationError as _e:
         _error = mo.callout(
-            mo.md(f"""Attempting to add a Color with `goal="chaos"` — a value not in the
+            mo.md(f"""**SHACL validation failure (expected)**
+
+Attempting to add a Color with `goal="chaos"` — a value not in the
 controlled vocabulary `{{peace, perfection, satisfaction, freedom, harmony}}`.
 
 The framework rejects it immediately:
@@ -410,7 +402,7 @@ The framework rejects it immediately:
 {_e.report[:1500]}
 ```
 """),
-            title="SHACL validation failure (expected)", kind="danger",
+            kind="danger",
         )
 
     verification_output = mo.vstack([
@@ -488,7 +480,7 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
         _behaviors = extract_attr(_graph_ttl, _fid, "example_behaviors")
         _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
         return mo.callout(
-            mo.md(f"""**Clan:** {_clan.capitalize()}
+            mo.md(f"""### {_fid} — {_clan.capitalize()}
 
 > *{_persona}*
 
@@ -499,7 +491,7 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
 **Example behaviors:**
 {_btext}
 """),
-            title=f"{_fid} — {_clan.capitalize()}", kind="info",
+            kind="info",
         )
 
     discovery_output = mo.vstack([
@@ -527,8 +519,8 @@ The essay "The MTG Color Wheel (&amp; Humanity)" independently classifies
 these 10 triples as shards or wedges. Does our topological discovery agree?
 """),
         mo.callout(
-            mo.md("**All 10 classifications match.** Topology reproduces domain knowledge."),
-            title="Result", kind="success" if _all_match else "warn",
+            mo.md("**Result:** All 10 classifications match. Topology reproduces domain knowledge."),
+            kind="success" if _all_match else "warn",
         ),
         mo.md("""
 ### The Ten Triples
@@ -536,7 +528,7 @@ these 10 triples as shards or wedges. Does our topological discovery agree?
 Now grouped by their **discovered** structure — not an asserted attribute,
 but a classification that emerged from counting edge dispositions.
 """),
-        mo.tabs({
+        mo.ui.tabs({
             "Shards (2 adj + 1 opp)": mo.accordion({
                 f"{r['Face']} — {r['Clan'].capitalize()}": _make_triple_card(r["Face"], r["Clan"])
                 for r in _shards
@@ -564,16 +556,16 @@ def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
             persona="Test.", at_best="Test.", at_worst="Test.",
             example_behaviors=["Test"])
         _result = mo.callout(
-            mo.md("After promotion, `structure` is required on all `ColorTriple` faces. "
+            mo.md("**Schema/data tension:** After promotion, `structure` is required on all `ColorTriple` faces. "
                   "Any new face added without `structure` will be rejected. "
                   "The 10 existing faces would also fail re-validation — "
                   "they were valid under the old schema, but the schema has moved on."),
-            title="Schema/data tension", kind="warn",
+            kind="warn",
         )
     except ValidationError as _e:
         _result = mo.callout(
-            mo.md(f"Validation failed:\n\n```\n{_e.report[:1000]}\n```"),
-            title="Schema enforcement", kind="danger",
+            mo.md(f"**Schema enforcement:** Validation failed:\n\n```\n{_e.report[:1000]}\n```"),
+            kind="danger",
         )
 
     promotion_output = mo.vstack([
@@ -673,7 +665,7 @@ This project uses the five Magic: The Gathering colors as its test case.
 The philosophical framework for the color wheel is drawn from the following source,
 which we gratefully acknowledge:
 
-- **"The MTG Color Wheel (& Humanity)"** by Homo Sabiens
+- **"The MTG Color Wheel (& Humanity)"** by Duncan Sabien
   - Original: [https://homosabiens.substack.com/p/the-mtg-color-wheel](https://homosabiens.substack.com/p/the-mtg-color-wheel)
   - Local copy: [`references/the-mtg-color-wheel.md`](../references/the-mtg-color-wheel.md)
 
