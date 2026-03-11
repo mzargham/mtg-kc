@@ -1,0 +1,77 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  UV_SYSTEM_PYTHON: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Check human review approval
+        run: |
+          if [ ! -f _review/approved.sha ]; then
+            echo "::error::No review approval found. See CLAUDE.md or README.md for the review process."
+            echo "::error::Run: uv run marimo export html-wasm demo/demo.py -o _site/index.html --mode run"
+            echo "::error::Then: git rev-parse HEAD > _review/approved.sha"
+            exit 1
+          fi
+          APPROVED=$(cat _review/approved.sha | tr -d '[:space:]')
+          CURRENT=$(git rev-parse HEAD)
+          if [ "$APPROVED" != "$CURRENT" ]; then
+            echo "::error::Review approval is for $APPROVED but HEAD is $CURRENT."
+            echo "::error::Re-export the notebook, review locally, and update _review/approved.sha."
+            exit 1
+          fi
+          echo "Review approval confirmed for $CURRENT"
+
+      - name: Export notebook
+        run: |
+          uv run marimo export html-wasm \
+            demo/demo.py \
+            -o _site/index.html \
+            --mode run
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
