@@ -22,7 +22,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Run tests
-        run: uv run pytest tests/ -v
+        run: uv run --extra dev pytest tests/ -v
 
   build:
     needs: test
@@ -67,7 +67,7 @@ jobs:
 
       - name: Export notebook
         run: |
-          uv run marimo export html \
+          uv run --extra notebook marimo export html \
             demo/demo.py \
             -o _site/index.html
 
