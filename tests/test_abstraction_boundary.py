@@ -78,9 +78,9 @@ def test_demo_notebook_does_not_import_rdflib():
 # ---------------------------------------------------------------------------
 
 def test_kc_all_exports():
-    """kc.__all__ should be exactly the 5 public names."""
+    """kc.__all__ should be exactly the 7 public names."""
     import kc
-    expected = {"SchemaBuilder", "vocab", "KnowledgeComplex", "ValidationError", "UnknownQueryError"}
+    expected = {"SchemaBuilder", "vocab", "text", "TextDescriptor", "KnowledgeComplex", "ValidationError", "UnknownQueryError"}
     assert set(kc.__all__) == expected
 
 

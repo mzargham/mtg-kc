@@ -246,7 +246,13 @@ def test_h6_knowledge_complex_returns_strings_and_dataframes():
 
     sb = build_mtg_schema()
     kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
-    kc.add_vertex("White", type="Color")
+    kc.add_vertex("White", type="Color",
+        goal="peace", method="order",
+        persona="Test persona.",
+        at_best="Test at best.",
+        at_worst="Test at worst.",
+        example_behaviors=["Test behavior"],
+    )
 
     ttl = kc.dump_graph()
     assert isinstance(ttl, str)

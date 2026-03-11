@@ -93,6 +93,7 @@ class KnowledgeComplex:
         query_dirs: list[Path] | None = None,
     ) -> None:
         self._schema = schema
+        self._query_dirs_raw = query_dirs or []
         self._query_templates = _load_query_templates(extra_dirs=query_dirs)
         self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
         self._complex_iri: Any = None     # URIRef for the kc:Complex individual
@@ -204,7 +205,11 @@ class KnowledgeComplex:
 
         # Assert attributes (in model namespace)
         for attr_name, attr_value in attributes.items():
-            add(id_iri, self._ns[attr_name], Literal(attr_value))
+            if isinstance(attr_value, (list, tuple)):
+                for v in attr_value:
+                    add(id_iri, self._ns[attr_name], Literal(v))
+            else:
+                add(id_iri, self._ns[attr_name], Literal(attr_value))
 
         # Add to complex
         add(self._complex_iri, _KC.hasElement, id_iri)
@@ -382,3 +387,52 @@ class KnowledgeComplex:
         REQ-GRAPH-08
         """
         return self._instance_graph.serialize(format="turtle")
+
+    def export(self, path: str | Path) -> Path:
+        """
+        Export the schema, queries, and instance graph to a directory.
+
+        Writes ontology.ttl, shapes.ttl, queries/*.sparql, and instance.ttl.
+
+        Parameters
+        ----------
+        path : str | Path
+            Target directory. Created if it does not exist.
+
+        Returns
+        -------
+        Path
+            The export directory.
+        """
+        p = Path(path)
+        self._schema.export(p, query_dirs=self._query_dirs_raw)
+        (p / "instance.ttl").write_text(self.dump_graph())
+        return p
+
+    @classmethod
+    def load(cls, path: str | Path) -> "KnowledgeComplex":
+        """
+        Load a knowledge complex from a directory.
+
+        Reads ontology.ttl and shapes.ttl to reconstruct the schema,
+        queries/*.sparql for query templates, and instance.ttl (if present)
+        for the instance graph.
+
+        Parameters
+        ----------
+        path : str | Path
+            Directory containing at minimum ontology.ttl and shapes.ttl.
+
+        Returns
+        -------
+        KnowledgeComplex
+        """
+        p = Path(path)
+        schema = SchemaBuilder.load(p)
+        query_dir = p / "queries"
+        query_dirs = [query_dir] if query_dir.exists() else []
+        kc = cls(schema=schema, query_dirs=query_dirs)
+        instance_file = p / "instance.ttl"
+        if instance_file.exists():
+            kc._instance_graph.parse(str(instance_file), format="turtle")
+        return kc
