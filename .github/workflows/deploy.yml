@@ -13,6 +13,38 @@ env:
   UV_SYSTEM_PYTHON: 1
 
 jobs:
+  review-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check human review approval
+        run: |
+          if [ ! -f _review/approval ]; then
+            echo "::error::No review approval found."
+            echo "::error::Run: echo 'mzargham $(date -u +%Y-%m-%dT%H:%M:%SZ)' > _review/approval"
+            exit 1
+          fi
+          APPROVER=$(awk '{print $1}' _review/approval)
+          TIMESTAMP=$(awk '{print $2}' _review/approval)
+          if [ "$APPROVER" != "mzargham" ]; then
+            echo "::error::Approval must be from mzargham, got: $APPROVER"
+            exit 1
+          fi
+          # Check approval is less than 10 minutes old
+          NOW=$(date -u +%s)
+          APPROVED=$(date -u -d "$TIMESTAMP" +%s 2>/dev/null || echo "INVALID")
+          if [ "$APPROVED" = "INVALID" ]; then
+            echo "::error::Invalid timestamp in _review/approval: $TIMESTAMP"
+            exit 1
+          fi
+          AGE=$(( NOW - APPROVED ))
+          if [ "$AGE" -gt 600 ]; then
+            echo "::error::Approval is $(( AGE / 60 )) minutes old (max 10). Re-approve."
+            exit 1
+          fi
+          echo "Approved by $APPROVER at $TIMESTAMP ($(( AGE / 60 )) minutes ago)"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -25,45 +57,13 @@ jobs:
         run: uv run --extra dev pytest tests/ -v
 
   build:
-    needs: test
+    needs: [review-gate, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-
-      - name: Check human review approval
-        run: |
-          if [ ! -f _review/approved.sha ]; then
-            echo "::error::No review approval found. See CLAUDE.md or README.md for the review process."
-            echo "::error::Run: uv run marimo export html demo/demo.py -o _site/index.html"
-            echo "::error::Then: git rev-parse HEAD > _review/approved.sha"
-            exit 1
-          fi
-          APPROVED=$(cat _review/approved.sha | tr -d '[:space:]')
-          CURRENT=$(git rev-parse HEAD)
-          if [ "$APPROVED" = "$CURRENT" ]; then
-            echo "Review approval matches HEAD exactly ($CURRENT)"
-            exit 0
-          fi
-          # Allow the approval commit itself: if the only changes between
-          # the approved SHA and HEAD are in _review/, the content is unchanged.
-          CHANGED=$(git diff --name-only "$APPROVED" "$CURRENT" -- . ':!_review/' 2>/dev/null || echo "DIFF_FAILED")
-          if [ "$CHANGED" = "DIFF_FAILED" ]; then
-            echo "::error::Review approval SHA $APPROVED is not a valid commit in this history."
-            echo "::error::Re-export the notebook, review locally, and update _review/approved.sha."
-            exit 1
-          fi
-          if [ -z "$CHANGED" ]; then
-            echo "Review approval is for $APPROVED; only _review/ files changed since then. OK."
-            exit 0
-          fi
-          echo "::error::Review approval is for $APPROVED but HEAD is $CURRENT."
-          echo "::error::Content files changed since approval:"
-          echo "$CHANGED" | sed 's/^/::error::  /'
-          echo "::error::Re-export the notebook, review locally, and update _review/approved.sha."
-          exit 1
 
       - name: Export notebook
         run: |

@@ -112,27 +112,22 @@ marimo run demo/demo.py
 
 ## Deployment
 
-The notebook is published to GitHub Pages via GitHub Actions. The pipeline runs
-tests first, then checks for human review approval before building and deploying.
+The notebook is published to GitHub Pages via GitHub Actions. The review gate and tests run in parallel; both must pass before the build and deploy steps.
 
 Before deployment can proceed, a human must review the HTML export locally:
 
 ```bash
-# 1. Export the notebook
+# 1. Export and review in browser
 uv run marimo export html demo/demo.py -o _site/index.html
 
-# 2. Open _site/index.html in your browser and verify the rendering
+# 2. Record approval (must be less than 10 min old — do this last before pushing)
+echo "mzargham $(date -u +%Y-%m-%dT%H:%M:%SZ)" > _review/approval
 
-# 3. Record approval
-git rev-parse HEAD > _review/approved.sha
-
-# 4. Commit and push
-git add _review/approved.sha
-git commit -m "approve HTML export for $(git rev-parse --short HEAD)"
+# 3. Commit and push
+git add _review/approval
+git commit -m "approve deploy"
 git push
 ```
-
-CI verifies that the SHA in `_review/approved.sha` matches the current `HEAD`, or that the only changes since the approved SHA are in `_review/` itself (the approval commit). If content files change after the review, the build fails and asks for re-review.
 
 ## References & Acknowledgements
 

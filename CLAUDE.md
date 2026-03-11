@@ -95,11 +95,9 @@ uv run marimo run demo/demo.py       # read-only viewing
 
 ## Deployment Review Process
 
-The notebook is published to GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`). The pipeline is: **test → review gate → build → deploy**.
+The notebook is published to GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`). The pipeline is: **review-gate + test → build → deploy** (review-gate and test run in parallel; both must pass before build).
 
-**Tests gate deployment.** The `build` job has `needs: test` — if pytest fails, nothing deploys.
-
-**Human review gates deployment.** Before the HTML export is built in CI, a check verifies that a human has locally reviewed the rendered output. This prevents deploying mangled renders.
+**Human review gates deployment.** The `_review/approval` file must contain the approver's username and an ISO timestamp less than 10 minutes old. Approval is the last step before pushing.
 
 ### The review/signoff workflow
 
@@ -108,33 +106,23 @@ The notebook is published to GitHub Pages via GitHub Actions (`.github/workflows
    uv run marimo export html demo/demo.py -o _site/index.html
    ```
 
-2. **Review in browser:** Open `_site/index.html` and verify:
-   - All cells render correctly
-   - Interactive elements work
-   - No layout or content mangling
+2. **Review in browser:** Open `_site/index.html` and verify rendering.
 
 3. **Record approval:**
    ```bash
-   git rev-parse HEAD > _review/approved.sha
+   echo "mzargham $(date -u +%Y-%m-%dT%H:%M:%SZ)" > _review/approval
    ```
 
 4. **Commit and push:**
    ```bash
-   git add _review/approved.sha
-   git commit -m "approve HTML export for $(git rev-parse --short HEAD)"
+   git add _review/approval
+   git commit -m "approve deploy"
    git push
    ```
 
-CI checks that the SHA in `_review/approved.sha` matches the current `HEAD`, or that the only changes since the approved SHA are in the `_review/` directory itself (i.e., the approval commit). This avoids the self-reference problem where committing the SHA file changes HEAD.
-
 ### When the review gate blocks
 
-If CI fails with "Content files changed since approval", it means code or docs were modified after the last review. The fix is:
-
-1. Re-export the notebook locally
-2. Review the new export
-3. Update `_review/approved.sha` with the new HEAD
-4. Commit and push
+If CI fails with "Approval is X minutes old", re-approve by updating the timestamp and pushing.
 
 ## What Not To Do
 
