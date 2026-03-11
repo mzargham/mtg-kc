@@ -6,7 +6,4 @@ from kc.schema import SchemaBuilder, vocab, text, TextDescriptor
 from kc.graph import KnowledgeComplex
 from kc.exceptions import ValidationError, UnknownQueryError
 
-__all__ = [
-    "SchemaBuilder", "vocab", "text", "TextDescriptor",
-    "KnowledgeComplex", "ValidationError", "UnknownQueryError",
-]
+__all__ = ["SchemaBuilder", "vocab", "text", "TextDescriptor", "KnowledgeComplex", "ValidationError", "UnknownQueryError"]

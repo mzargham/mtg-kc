@@ -4,24 +4,20 @@ models.mtg.schema — MTG color wheel schema definition.
 Defines the domain-specific types for the MTG knowledge complex:
 - Color (vertex type) with goal, method, persona, at_best, at_worst, example_behaviors
 - ColorPair (edge type) with disposition, guild, theme, persona, at_best, at_worst, example_behaviors
-- ColorTriple (face type) with clan, optional structure ∈ {shard, wedge}, persona, at_best, at_worst, example_behaviors
+- ColorTriple (face type) with clan, optional structure, persona, at_best, at_worst, example_behaviors
 
-All element types also have optional game-specific cross-references:
-playstyle and example_decks.
+All types also have optional playstyle and example_decks attributes.
 
 Design note — face enumeration policy:
     MTG explicitly enumerates all C(5,3)=10 ColorTriple faces in K5.
     This is an MTG model-level assertion, NOT a framework invariant.
     Other model families may leave faces absent (holes are meaningful).
 
-Deferred issue — simplex inference from closed boundaries:
-    A future framework extension could let a model family declare that
-    closed k-boundaries necessitate (k+1)-simplices. When declared, the
-    framework would provide methods to infer higher-order simplices from
-    lower-order ones (e.g., infer all faces from vertices + edges alone).
-    Without this declaration, faces must be added explicitly as MTG does
-    today. Analogous to the proposed orientation extension — both are
-    model-family-level framework features, not core invariants.
+Design note — structure replaces pattern:
+    The original `pattern in {ooa, oaa}` was a topological placeholder.
+    The MTG domain names this distinction: shard (3 consecutive colors,
+    1 opposite + 2 adjacent edges) vs wedge (2 adjacent + 1 opposite color,
+    2 opposite + 1 adjacent edge). We use the domain's own terminology.
 """
 
 from kc.schema import SchemaBuilder, vocab, text
@@ -65,7 +61,7 @@ def build_mtg_schema() -> SchemaBuilder:
             "esper", "grixis", "jund", "naya", "bant",
             "mardu", "temur", "abzan", "jeskai", "sultai",
         ),
-        # structure is optional — to be discovered via SPARQL, not pre-asserted (REQ-DEMO-05)
+        # structure is optional — to be discovered, not pre-asserted (REQ-DEMO-05)
         "structure": {"vocab": vocab("shard", "wedge"), "required": False},
         "persona": text(),
         "at_best": text(),

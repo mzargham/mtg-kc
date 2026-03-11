@@ -34,9 +34,10 @@ _OPPOSITE_PAIRS = {
 }
 
 # Ground-truth face classification (sorted color triple → structure)
-# wedge = two opposite edges + one adjacent (ooa); shard = one opposite + two adjacent (oaa)
+# shard = 3 consecutive colors (1 opposite + 2 adjacent edges)
+# wedge = 2 adjacent + 1 opposite color (2 opposite + 1 adjacent edge)
 # Computed from MTG color wheel: adjacent = pentagon edges, opposite = diagonals.
-# 5 wedge + 5 shard = 10 total.
+# 5 shards + 5 wedges = 10 total.
 _FACE_STRUCTURES: dict[frozenset, str] = {
     frozenset({"White", "Blue", "Black"}):  "shard",
     frozenset({"White", "Blue", "Red"}):    "wedge",
@@ -53,7 +54,7 @@ _FACE_STRUCTURES: dict[frozenset, str] = {
 
 @pytest.fixture(scope="module")
 def mtg_kc() -> KnowledgeComplex:
-    """Full MTG demo instance with all 10 faces (no structure attribute asserted)."""
+    """Full MTG demo instance with all 10 faces (no pattern attributes asserted)."""
     from demo.demo_instance import build_mtg_instance
     return build_mtg_instance()
 
@@ -112,14 +113,13 @@ def test_structure_discovery_shard_wedge(mtg_kc):
     """REQ-DEMO-05, REQ-VV-05: SPARQL correctly classifies all 10 faces into shard/wedge."""
     df = mtg_kc.query("faces_by_edge_pattern")
     # Derive structure from the three disposition values
+    # shard: 1 opposite + 2 adjacent (oaa); wedge: 2 opposite + 1 adjacent (ooa)
     def classify(row):
         dispositions = sorted([row["d1"], row["d2"], row["d3"]])
-        # wedge: adjacent, opposite, opposite (2 opposite + 1 adjacent)
-        # shard: adjacent, adjacent, opposite (1 opposite + 2 adjacent)
-        if dispositions.count("opposite") == 2:
-            return "wedge"
-        elif dispositions.count("opposite") == 1:
+        if dispositions.count("opposite") == 1:
             return "shard"
+        elif dispositions.count("opposite") == 2:
+            return "wedge"
         else:
             return "unknown"
     df["discovered_structure"] = df.apply(classify, axis=1)
@@ -131,7 +131,7 @@ def test_structure_discovery_shard_wedge(mtg_kc):
 
 # --- REQ-DEMO-06, REQ-VV-03, REQ-VV-04 ---
 
-@pytest.mark.skip(reason="WP5: promote demonstration not yet implemented")
+@pytest.mark.skip(reason="WP5: promotion demo not yet implemented in notebook")
 def test_promote_causes_validation_fail(mtg_kc):
     """REQ-DEMO-06: after promoting structure to required, all 10 faces fail SHACL."""
     # promote_to_attribute modifies the schema in place;
@@ -149,4 +149,10 @@ def test_promote_causes_validation_fail(mtg_kc):
         vocab=vocab("shard", "wedge"),
         required=True,
     )
+    # Re-validate: all faces should now fail
+    # kc_new = KnowledgeComplex(schema=sb)
+    # ... add all vertices, edges, faces without structure ...
+    # for face_id in face_ids:
+    #     with pytest.raises(ValidationError):
+    #         kc_new.add_face(face_id, ...)
     pytest.skip("Full implementation pending WP5")

@@ -56,7 +56,7 @@ All 25 elements (5 vertices, 10 edges, 10 faces) now carry full attribute values
 
 1. **`text()` vs extending `vocab()`**: Separate descriptor type because the semantics differ fundamentally — `vocab()` constrains values via `sh:in`, `text()` does not. Mixing them in one type would require sentinel values or mode flags.
 
-2. **Shared property domain removal**: When `persona` appears on Color, ColorPair, and ColorTriple, setting `rdfs:domain` on all three causes RDFS inference to classify any individual with `persona` as a member of all three classes. The fix: track which properties have been seen via `_attr_domains` dict; if a property appears on a second type, remove `rdfs:domain` entirely. SHACL shapes already enforce per-type constraints.
+2. **Shared property domain removal**: When `persona` appears on Color, ColorPair, and ColorTriple, setting `rdfs:domain` on all three causes RDFS inference to classify any individual with `persona` as a member of all three classes. The fix: track which properties have been seen via `_attr_domains` dict; if a property appears on a second type, remove `rdfs:domain` entirely. SHACL shapes already enforce per-type constraints. This is a concrete instance of the 2×2 design seam: OWL's `rdfs:domain` is an inference axiom (open-world — it *adds* knowledge), while SHACL's `sh:targetClass` + `sh:property` is a constraint (closed-world — it *validates*). Shared properties need the constraint semantics, not the inference semantics, confirming why both layers are necessary in the ontological column.
 
 3. **`structure` replaces `pattern`**: The essay calls three-consecutive-color triples "shards" and two-adjacent-plus-one-opposite triples "wedges". Using the domain's own terminology (shard/wedge) instead of the topological encoding (oaa/ooa) is faithful to the source material. The mapping: shard = oaa (1 opposite, 2 adjacent), wedge = ooa (2 opposite, 1 adjacent).
 
@@ -69,7 +69,7 @@ All 25 elements (5 vertices, 10 edges, 10 faces) now carry full attribute values
 - [ ] Is the shard/wedge terminology correct (shard = 3 consecutive colors, wedge = 2 adjacent + 1 opposite)?
 - [ ] Are the guild names, clan names, themes, goals, and methods all correct per MTG lore?
 - [ ] Does the `text()` API design feel right alongside `vocab()`?
-- [ ] Is the shared-domain removal the right trade-off (loses OWL domain info, gains SHACL correctness)?
+- [x] Is the shared-domain removal the right trade-off (loses OWL domain info, gains SHACL correctness)? — **Accepted.** Validates the 2×2 architecture: OWL domain is inference (open-world), SHACL target is constraint (closed-world). Shared properties need constraint semantics.
 - [ ] Are the example_behaviors representative and concise?
 
 ## Verification (machine — Claude runs these)
@@ -81,6 +81,7 @@ pytest tests/ -v
 Expected: 177 passed, 5 skipped, 0 failed.
 
 Test coverage:
+
 - `tests/test_text_descriptor.py`: 29 tests — text() descriptor, OWL/SHACL generation, shared-domain handling, cross-type validation, list values, regressions
 - `tests/test_mtg_demo.py`: structure discovery (shard/wedge), 5+5 counts, no structure pre-asserted
 - `tests/test_hypothesis_criteria.py`: H1–H6 with enriched schema
@@ -108,3 +109,4 @@ Requirements covered: REQ-DEMO-01 through REQ-DEMO-05, H1–H6.
 | 2026-03-10 | Add optional playstyle, example_decks | Added as `text(required=False)` / `text(multiple=True, required=False)` on all types. Not asserted in demo. |
 | 2026-03-10 | Fix shared property domain inference bug | Added `_set_owl_domain()` with `_attr_domains` tracking dict. Removes `rdfs:domain` when property appears on multiple types. 4 regression tests added. |
 | 2026-03-10 | Write regression tests for all bugs found | 4 regression tests in `tests/test_text_descriptor.py`: shared domain removal, 3-type domain, cross-type SHACL, full MTG instance validation. |
+| 2026-03-10 | Accepted: shared-domain removal trade-off | User confirmed this validates the 2×2 architecture — OWL domain is inference (open-world), SHACL target is constraint (closed-world). Quality criterion checked. |

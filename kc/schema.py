@@ -16,6 +16,7 @@ dump_owl() and dump_shacl() return merged (core + user) Turtle strings.
 """
 
 from __future__ import annotations
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -138,7 +139,7 @@ class SchemaBuilder:
     >>> sb.add_edge_type("ColorPair",
     ...     attributes={"disposition": vocab("adjacent", "opposite")})
     >>> sb.add_face_type("ColorTriple",
-    ...     attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})
+    ...     attributes={"structure": {"vocab": vocab("shard", "wedge"), "required": False}})
     >>> owl_ttl = sb.dump_owl()
     >>> shacl_ttl = sb.dump_shacl()
     """
@@ -270,6 +271,29 @@ class SchemaBuilder:
         else:
             raise TypeError(f"Unknown attribute descriptor: {type(descriptor)}")
 
+    def _dispatch_attr(
+        self,
+        type_iri: URIRef,
+        shape_iri: URIRef,
+        attr_name: str,
+        attr_spec: VocabDescriptor | TextDescriptor | dict,
+    ) -> None:
+        """Route an attribute spec to the correct graph-writing method."""
+        if isinstance(attr_spec, (VocabDescriptor, TextDescriptor)):
+            self._add_attr_to_graphs(type_iri, shape_iri, attr_name, attr_spec)
+        elif isinstance(attr_spec, dict):
+            if "vocab" in attr_spec:
+                vd = attr_spec["vocab"]
+                req = attr_spec.get("required", True)
+                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, vd, required=req)
+            elif "text" in attr_spec:
+                td = attr_spec["text"]
+                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, td)
+            else:
+                raise TypeError(f"Attribute dict must have 'vocab' or 'text' key: {attr_spec}")
+        else:
+            raise TypeError(f"Unknown attribute spec type: {type(attr_spec)}")
+
     def add_vertex_type(
         self,
         name: str,
@@ -312,29 +336,6 @@ class SchemaBuilder:
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
         return self
-
-    def _dispatch_attr(
-        self,
-        type_iri: URIRef,
-        shape_iri: URIRef,
-        attr_name: str,
-        attr_spec: VocabDescriptor | TextDescriptor | dict,
-    ) -> None:
-        """Route an attribute spec to the correct graph-writing method."""
-        if isinstance(attr_spec, (VocabDescriptor, TextDescriptor)):
-            self._add_attr_to_graphs(type_iri, shape_iri, attr_name, attr_spec)
-        elif isinstance(attr_spec, dict):
-            if "vocab" in attr_spec:
-                vd = attr_spec["vocab"]
-                req = attr_spec.get("required", True)
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, vd, required=req)
-            elif "text" in attr_spec:
-                td = attr_spec["text"]
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, td)
-            else:
-                raise TypeError(f"Attribute dict must have 'vocab' or 'text' key: {attr_spec}")
-        else:
-            raise TypeError(f"Unknown attribute spec type: {type(attr_spec)}")
 
     def add_edge_type(
         self,
@@ -396,11 +397,8 @@ class SchemaBuilder:
         name : str
             Class name within the user namespace.
         attributes : dict, optional
-            Mapping of attribute name to attribute specification. Each value is either:
-
-            - A ``VocabDescriptor`` (from ``vocab()``) — required by default.
-            - A ``dict`` with keys ``{"vocab": VocabDescriptor, "required": bool}``
-              for optional attributes (``required=False`` generates sh:minCount 0).
+            Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
+            or dict with "vocab"/"text" key and optional "required" flag).
 
         Returns
         -------
@@ -524,3 +522,114 @@ class SchemaBuilder:
         REQ-SCHEMA-07
         """
         return self._shacl_graph.serialize(format="turtle")
+
+    def export(
+        self,
+        path: str | Path,
+        query_dirs: list[Path] | None = None,
+    ) -> Path:
+        """
+        Export the schema to a directory as standard semantic web files.
+
+        Writes ontology.ttl (OWL) and shapes.ttl (SHACL). If query_dirs are
+        provided, copies all .sparql files into a queries/ subdirectory.
+
+        Parameters
+        ----------
+        path : str | Path
+            Target directory. Created if it does not exist.
+        query_dirs : list[Path], optional
+            Directories containing .sparql query templates to include.
+
+        Returns
+        -------
+        Path
+            The export directory.
+        """
+        p = Path(path)
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "ontology.ttl").write_text(self.dump_owl())
+        (p / "shapes.ttl").write_text(self.dump_shacl())
+        if query_dirs:
+            qdir = p / "queries"
+            qdir.mkdir(exist_ok=True)
+            for d in query_dirs:
+                for sparql_file in d.glob("*.sparql"):
+                    shutil.copy2(sparql_file, qdir / sparql_file.name)
+        return p
+
+    @classmethod
+    def load(cls, path: str | Path) -> "SchemaBuilder":
+        """
+        Load a schema from a directory containing ontology.ttl and shapes.ttl.
+
+        Reconstructs the type registry by inspecting OWL subclass triples.
+        The loaded SchemaBuilder supports dump_owl(), dump_shacl(), export(),
+        and can be passed to KnowledgeComplex for instance construction.
+
+        Parameters
+        ----------
+        path : str | Path
+            Directory containing ontology.ttl and shapes.ttl.
+
+        Returns
+        -------
+        SchemaBuilder
+        """
+        p = Path(path)
+
+        owl_graph = Graph()
+        owl_graph.parse(str(p / "ontology.ttl"), format="turtle")
+
+        shacl_graph = Graph()
+        shacl_graph.parse(str(p / "shapes.ttl"), format="turtle")
+
+        # Discover model namespace: find a namespace binding that is not
+        # one of the well-known prefixes (kc, kcs, sh, owl, rdfs, rdf, xsd)
+        well_known = {
+            str(_KC), str(_KCS), str(_SH),
+            str(OWL), str(RDFS), str(RDF), str(XSD),
+        }
+        namespace = None
+        ns_obj = None
+        for prefix, uri in owl_graph.namespaces():
+            uri_str = str(uri)
+            if prefix and uri_str not in well_known and uri_str.startswith("https://example.org/"):
+                # Skip shape namespaces (ending with /shape#)
+                if "/shape#" in uri_str:
+                    continue
+                namespace = prefix
+                ns_obj = Namespace(uri_str)
+                break
+
+        if namespace is None:
+            raise ValueError(
+                f"Could not detect model namespace in {p / 'ontology.ttl'}. "
+                "Expected a namespace binding like 'mtg: <https://example.org/mtg#>'."
+            )
+
+        # Build instance without calling __init__
+        sb = object.__new__(cls)
+        sb._namespace = namespace
+        sb._base_iri = str(ns_obj)
+        sb._ns = ns_obj
+        sb._nss = Namespace(f"https://example.org/{namespace}/shape#")
+        sb._owl_graph = owl_graph
+        sb._shacl_graph = shacl_graph
+        sb._attr_domains = {}
+
+        # Reconstruct _types registry from OWL subclass triples
+        sb._types = {}
+        kind_map = {
+            _KC.Vertex: "vertex",
+            _KC.Edge: "edge",
+            _KC.Face: "face",
+        }
+        for kc_class, kind in kind_map.items():
+            for type_iri in owl_graph.subjects(RDFS.subClassOf, kc_class):
+                # Extract local name from IRI
+                local_name = str(type_iri).replace(sb._base_iri, "")
+                if local_name:
+                    sb._types[local_name] = {"kind": kind}
+
+        return sb

@@ -1,19 +1,20 @@
-# WP6 — CI/CD + GitHub Pages Deployment
+# WP6 — CI/CD + GitHub Pages + Repo Finalization
 
-## Status: Not Started
+## Status: In Progress
 
 ## Scope
+
+### A. CI/CD & Deployment
 
 Set up GitHub Actions for continuous deployment of the Marimo notebook to GitHub Pages. Pattern mirrors `mzargham/hc-marimo`.
 
 **Create `.github/workflows/deploy.yml`:**
 
 - Trigger: push to `main` + `workflow_dispatch`
+- Test job: `pytest tests/ -v` as gate before build
 - Build job: checkout, install uv, export notebook as HTML-WASM, upload artifact
 - Deploy job: deploy artifact to GitHub Pages
 - Concurrency: group `pages`, cancel-in-progress false
-
-**Optional: CI test job** running `pytest` before the deploy step.
 
 **User manual step on GitHub:**
 
@@ -21,12 +22,55 @@ Set up GitHub Actions for continuous deployment of the Marimo notebook to GitHub
 2. Under "Build and deployment", set Source to **"GitHub Actions"**
 3. Save — the workflow handles everything else
 
+### B. Documentation Reconciliation
+
+Reconcile primary docs with the actual codebase. The implementation is ahead of documentation in several areas.
+
+**PLAN.md → ROADMAP.md:**
+- Replace the original WP0–WP6 plan with a forward-looking roadmap
+- Completed work: summarized from worklogs
+- Open work: links to `docs/issues/`
+- Hypothesis test results: which criteria were validated
+
+**ARCHITECTURE.md updates:**
+- Add DD6: shared-domain removal (`_set_owl_domain()` — OWL inference vs. SHACL constraint semantics)
+- Update Vocabulary Tiers examples to include `structure`/`shard`/`wedge`, `goal`, `method`, `guild`, `theme`, `clan`
+- Document `text()` vs. `vocab()` distinction in the ontological layer
+- Fix `pattern`/`ooa`/`oaa` references → `structure`/`shard`/`wedge`
+
+**REQUIREMENTS.md updates:**
+- Add REQ-SCHEMA-10: `text()` descriptor for free-text attributes
+- Add REQ-SCHEMA-11: `export()` / `load()` model serialization (WP3.5)
+- Update REQ-DEMO-05/06 terminology: `pattern` → `structure`, `ooa`/`oaa` → `shard`/`wedge`
+- Add requirements for enriched schema attributes (WP4.5)
+
+**README.md:**
+- Update usage sketch to show enriched schema (text attributes, vocab attributes)
+- Add WotC trademark disclosure (already done on main)
+
+**demo/demo.py:**
+- Fix stale `pattern`/`ooa`/`oaa` references → `structure`/`shard`/`wedge`
+
+### C. Stale Reference Cleanup
+
+Grep and fix all remaining `pattern`/`ooa`/`oaa` references across docs and demo:
+- `docs/PLAN.md` (or its replacement)
+- `docs/ARCHITECTURE.md`
+- `demo/demo.py`
+
 ## Quality Criteria (human review)
 
+### CI/CD
 - [ ] Is deploy-on-push-to-main the workflow you want? (vs. manual-only, or tag-based releases)
 - [ ] Should pytest run as a gate before deploy, or is that overkill for this project?
 - [ ] Is the notebook the right thing to publish to Pages, or should it be something else?
 - [ ] Is `--mode run` (read-only interactive) the right mode, or do you want `--mode edit`?
+
+### Documentation
+- [ ] Does the roadmap accurately reflect where the project is and where it's headed?
+- [ ] Does ARCHITECTURE.md now reflect the actual system, including DD6 and text()?
+- [ ] Does REQUIREMENTS.md cover all implemented features?
+- [ ] Is any stale terminology (pattern/ooa/oaa) still present?
 
 ## Verification (machine — Claude runs these)
 
@@ -39,11 +83,21 @@ gh run list --workflow=deploy.yml --limit=1
 
 # After deploy: check pages
 gh api repos/mzargham/mtg-kc/pages
+
+# Stale terminology check
+grep -r "ooa\|oaa" docs/ demo/demo.py --include="*.md" --include="*.py"
+# Expected: no matches (only in references/ and models/mtg/queries/)
+
+# All tests pass
+uv run pytest tests/ -v
 ```
 
-Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`.
+Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`, no stale terminology.
 
 ## Changelog
 
 | Date | Change Requested | Resolution |
 |------|-----------------|------------|
+| 2026-03-10 | CI/CD workflow | Created `.github/workflows/deploy.yml` with pytest gate + HTML-WASM export + Pages deploy. Branch `wp6-ci-deploy`. |
+| 2026-03-10 | GitHub Pages source | User set Pages source to "GitHub Actions" in repo settings. Confirmed via `gh api`. |
+| 2026-03-10 | Expand WP6 scope to include repo finalization | Added Section B (doc reconciliation) and Section C (stale reference cleanup). PLAN.md → ROADMAP.md. ARCHITECTURE.md, REQUIREMENTS.md, README.md updates queued. |
