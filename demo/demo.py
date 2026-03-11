@@ -84,7 +84,7 @@ def cell_0_intro(mo):
 
 This notebook demonstrates the **knowledge complex** framework — a typed
 [simplicial complex](https://en.wikipedia.org/wiki/Simplicial_complex)
-with schema-driven validation, encapsulated queries, and a clean Python API
+with schema-driven verification, encapsulated queries, and a clean Python API
 that hides the OWL/SHACL/SPARQL machinery underneath.
 
 ## What is a knowledge complex?
@@ -182,9 +182,9 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
         "example_decks": text(multiple=True, required=False),
     })
 
-    # Build the full instance (25 elements — takes ~30s for SHACL validation)
+    # Build the full instance (25 elements — takes ~30s for SHACL verification)
     with mo.status.spinner(title="Building knowledge complex",
-                           subtitle="Validating 25 elements against SHACL schema ..."):
+                           subtitle="Verifying elements against SHACL schema ..."):
         kc = build_mtg_instance(schema=sb)
 
     mo.vstack([
@@ -193,7 +193,7 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
 
 We define three types using the `SchemaBuilder` DSL. Each `add_*_type` call
 simultaneously generates OWL class axioms (for inference) and SHACL shapes
-(for validation) — the **single-call invariant** (H3). No RDF is written
+(for verification) — the **single-call invariant** (H3). No RDF is written
 directly; the internal representation is accessible via `dump_owl()` and
 `dump_shacl()` but never required.
 """),
@@ -405,7 +405,7 @@ def cell_4_verification(mo, kc, ValidationError):
         _error = mo.callout(mo.md("Unexpectedly succeeded."), kind="danger")
     except ValidationError as _e:
         _error = mo.callout(
-            mo.md(f"""**SHACL validation failure (expected)**
+            mo.md(f"""**SHACL verification failure (expected)**
 
 Attempting to add a Color with `goal="chaos"` — a value not in the
 controlled vocabulary `{{peace, perfection, satisfaction, freedom, harmony}}`.
@@ -423,7 +423,7 @@ The framework rejects it immediately:
         mo.md("""
 ## 4. Verification
 
-SHACL validation runs on every `add_*` call — the **validation-on-write**
+SHACL verification runs on every `add_*` call — the **verification-on-write**
 invariant. If an element violates the schema (wrong vocabulary value, missing
 required attribute, broken boundary), the framework rejects it immediately
 and rolls back the assertion.
@@ -574,13 +574,13 @@ def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
         _result = mo.callout(
             mo.md("**Schema/data tension:** After promotion, `structure` is required on all `ColorTriple` faces. "
                   "Any new face added without `structure` will be rejected. "
-                  "The 10 existing faces would also fail re-validation — "
+                  "The 10 existing faces would also fail re-verification — "
                   "they were valid under the old schema, but the schema has moved on."),
             kind="warn",
         )
     except ValidationError as _e:
         _result = mo.callout(
-            mo.md(f"**Schema enforcement:** Validation failed:\n\n```\n{_e.report[:1000]}\n```"),
+            mo.md(f"**Schema enforcement:** Verification failed:\n\n```\n{_e.report[:1000]}\n```"),
             kind="danger",
         )
 
@@ -593,7 +593,7 @@ next step is to **codify** this discovery — make `structure` a required
 attribute of `ColorTriple`.
 
 `promote_to_attribute` updates both OWL and SHACL in a single call (H3).
-After promotion, **every existing face fails validation** because none has
+After promotion, **every existing face fails verification** because none has
 `structure` asserted. This is the schema/data tension: the ontology has
 evolved, but the data hasn't caught up.
 """),
@@ -609,7 +609,7 @@ This is the **discovery-to-codification** workflow:
 3. Promote discoveries to required schema constraints
 4. Data must be updated to satisfy the evolved schema
 
-The framework makes this loop safe: every step is validated, every change
+The framework makes this loop safe: every step is verified, every change
 is atomic across OWL and SHACL.
 """),
     ])

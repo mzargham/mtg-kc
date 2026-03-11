@@ -63,3 +63,4 @@ uv run pytest tests/ -v
 | 2026-03-11 | Add runtime warning | Added load-time warning in intro cell + `mo.status.spinner()` around instance build (~30-60s SHACL validation). |
 | 2026-03-11 | Persona cards show only 1 behavior | Fixed `extract_attr` regex to handle rdflib Turtle comma-separated multi-value serialization. All 3 example behaviors now display per card. |
 | 2026-03-11 | Shard/wedge not essay terms | Updated discovery narrative: "Compare with the source essay" → "Compare with MTG community knowledge". Shard/wedge are MTG community lore (*Shards of Alara*, *Khans of Tarkir*), not essay terms — topology independently reproduces community knowledge. |
+| 2026-03-11 | Verification vs validation terminology | Audited notebook for consistent usage: machine SHACL rule checks = "verification", human review = "validation". Fixed 11 instances where "validation" was used for SHACL checks. `ValidationError` class name left as-is (API surface). |
