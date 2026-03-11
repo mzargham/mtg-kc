@@ -35,32 +35,47 @@ def _make_schema() -> SchemaBuilder:
 # ---------------------------------------------------------------------------
 
 def test_add_edge_one_vertex_raises_value_error():
-    """add_edge with 1 vertex should raise ValueError (pre-stub check)."""
-    # Can't construct KnowledgeComplex (NotImplementedError), but we can test
-    # the ValueError guard on add_edge directly if we could get a KC instance.
-    # Since KC.__init__ calls _init_graph() which raises, we test the static check.
-    # Actually, the guard is in add_edge, which is after __init__. So this will fail
-    # at construction. Let's test the pattern differently.
-    #
-    # The ValueError is at line 211 of graph.py, inside add_edge(), which is only
-    # reachable if __init__ succeeds. Since __init__ raises NotImplementedError,
-    # we can't reach add_edge at all. Mark as expected fail.
-    pytest.skip("KnowledgeComplex.__init__ raises NotImplementedError before add_edge is reachable")
+    """REQ-CORE-02: add_edge with 1 vertex should raise ValueError."""
+    schema = _make_schema()
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
+    kc.add_vertex("A", type="Color")
+    with pytest.raises(ValueError):
+        kc.add_edge("e1", type="ColorPair", vertices={"A"}, disposition="adjacent")
 
 
 def test_add_edge_three_vertices_raises_value_error():
-    """add_edge with 3 vertices should raise ValueError."""
-    pytest.skip("KnowledgeComplex.__init__ raises NotImplementedError before add_edge is reachable")
+    """REQ-CORE-02: add_edge with 3 vertices should raise ValueError."""
+    schema = _make_schema()
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
+    for v in ["A", "B", "C"]:
+        kc.add_vertex(v, type="Color")
+    with pytest.raises(ValueError):
+        kc.add_edge("e1", type="ColorPair", vertices={"A", "B", "C"}, disposition="adjacent")
 
 
 def test_add_face_one_edge_raises_value_error():
-    """add_face with 1 boundary edge should raise ValueError."""
-    pytest.skip("KnowledgeComplex.__init__ raises NotImplementedError before add_face is reachable")
+    """REQ-CORE-03: add_face with 1 boundary edge should raise ValueError."""
+    schema = _make_schema()
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
+    for v in ["A", "B"]:
+        kc.add_vertex(v, type="Color")
+    kc.add_edge("AB", type="ColorPair", vertices={"A", "B"}, disposition="adjacent")
+    with pytest.raises(ValueError):
+        kc.add_face("f1", type="ColorTriple", boundary=["AB"])
 
 
 def test_add_face_four_edges_raises_value_error():
-    """add_face with 4 boundary edges should raise ValueError."""
-    pytest.skip("KnowledgeComplex.__init__ raises NotImplementedError before add_face is reachable")
+    """REQ-CORE-03: add_face with 4 boundary edges should raise ValueError."""
+    schema = _make_schema()
+    kc = KnowledgeComplex(schema=schema, query_dirs=[QUERIES_DIR])
+    for v in ["A", "B", "C", "D"]:
+        kc.add_vertex(v, type="Color")
+    kc.add_edge("AB", type="ColorPair", vertices={"A", "B"}, disposition="adjacent")
+    kc.add_edge("BC", type="ColorPair", vertices={"B", "C"}, disposition="adjacent")
+    kc.add_edge("CA", type="ColorPair", vertices={"C", "A"}, disposition="opposite")
+    kc.add_edge("AD", type="ColorPair", vertices={"A", "D"}, disposition="opposite")
+    with pytest.raises(ValueError):
+        kc.add_face("f1", type="ColorTriple", boundary=["AB", "BC", "CA", "AD"])
 
 
 # ---------------------------------------------------------------------------

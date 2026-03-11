@@ -71,7 +71,7 @@ def cell_imports():
 # ============================================================
 @app.cell
 def cell_0_intro(mo):
-    intro = mo.md("""
+    mo.md("""
 # Knowledge Complex: The MTG Color Wheel
 
 This notebook demonstrates the **knowledge complex** framework — a typed
@@ -116,11 +116,11 @@ alone.
 6. **Promotion** — codify the discovery; observe schema/data tension
 7. **Horizon** — where this goes next
 """)
-    return intro,
+    return
 
 
 # ============================================================
-# Cell 1: Schema Authoring
+# Cell 1: Schema Authoring + Instance Build
 # ============================================================
 @app.cell
 def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
@@ -173,7 +173,7 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
     # Build the full instance (25 elements — takes ~30s for SHACL validation)
     kc = build_mtg_instance(schema=sb)
 
-    schema_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 1. Schema Authoring
 
@@ -188,7 +188,7 @@ directly; the internal representation is accessible via `dump_owl()` and
             "SHACL Shapes (Turtle)": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
         }),
     ])
-    return sb, kc, schema_output
+    return sb, kc
 
 
 # ============================================================
@@ -284,7 +284,7 @@ def cell_2_colors(mo, nx, plt, np, kc, extract_attr):
             kind="info",
         ))
 
-    colors_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 2. The Five Colors
 
@@ -295,11 +295,11 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
         mo.as_html(_fig),
         mo.accordion({n: _color_cards[i] for i, n in enumerate(_color_names)}),
     ])
-    return colors_output,
+    return
 
 
 # ============================================================
-# Cell 3: The Ten Pairs (display)
+# Cell 3: The Ten Pairs
 # ============================================================
 @app.cell
 def cell_3_pairs(mo, kc, extract_attr):
@@ -344,7 +344,7 @@ def cell_3_pairs(mo, kc, extract_attr):
     _adj = ["WU", "UB", "BR", "RG", "GW"]
     _opp = ["WB", "WR", "UG", "UR", "BG"]
 
-    pairs_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 3. The Ten Pairs
 
@@ -366,11 +366,11 @@ the key to discovering face structure.
             }),
         }),
     ])
-    return pairs_output,
+    return
 
 
 # ============================================================
-# Cell 4: Verification (H4) (display)
+# Cell 4: Verification (H4)
 # ============================================================
 @app.cell
 def cell_4_verification(mo, kc, ValidationError):
@@ -405,7 +405,7 @@ The framework rejects it immediately:
             kind="danger",
         )
 
-    verification_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 4. Verification
 
@@ -420,11 +420,11 @@ when we try to add a malformed one.
         _counts,
         _error,
     ])
-    return verification_output,
+    return
 
 
 # ============================================================
-# Cell 5: Discovery (H5) (display)
+# Cell 5: Discovery (H5)
 # ============================================================
 @app.cell
 def cell_5_discovery(mo, pd, kc, extract_attr):
@@ -494,7 +494,7 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
             kind="info",
         )
 
-    discovery_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 5. Discovery: Structure from Topology
 
@@ -539,11 +539,11 @@ but a classification that emerged from counting edge dispositions.
             }),
         }),
     ])
-    return discovery_output,
+    return
 
 
 # ============================================================
-# Cell 6: Promotion (display)
+# Cell 6: Promotion
 # ============================================================
 @app.cell
 def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
@@ -568,7 +568,7 @@ def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
             kind="danger",
         )
 
-    promotion_output = mo.vstack([
+    mo.vstack([
         mo.md("""
 ## 6. Promotion: Discovery to Schema
 
@@ -597,15 +597,15 @@ The framework makes this loop safe: every step is validated, every change
 is atomic across OWL and SHACL.
 """),
     ])
-    return promotion_output,
+    return
 
 
 # ============================================================
-# Cell 7: Horizon (display)
+# Cell 7: Horizon
 # ============================================================
 @app.cell
 def cell_7_horizon(mo):
-    horizon = mo.md("""
+    mo.md("""
 ## 7. Horizon
 
 Two threads of future work extend this foundation in complementary directions.
@@ -647,18 +647,18 @@ sb.add_edge_type("PersonColorAffinity", attributes={
 # triples that characterize their worldview.
 ```
 
-The pentagon becomes a mirror: not just a taxonomy of philosophies,
+The color wheel becomes a mirror: not just a taxonomy of philosophies,
 but a practical tool for understanding how they combine in individuals.
 """)
-    return horizon,
+    return
 
 
 # ============================================================
-# Cell 8: References & Acknowledgements (display)
+# Cell 8: References & Acknowledgements
 # ============================================================
 @app.cell
 def cell_8_references(mo):
-    references = mo.md("""
+    mo.md("""
 ## References & Acknowledgements
 
 This project uses the five Magic: The Gathering colors as its test case.
@@ -667,9 +667,8 @@ which we gratefully acknowledge:
 
 - **"The MTG Color Wheel (& Humanity)"** by Duncan Sabien
   - Original: [https://homosabiens.substack.com/p/the-mtg-color-wheel](https://homosabiens.substack.com/p/the-mtg-color-wheel)
-  - Local copy: [`references/the-mtg-color-wheel.md`](../references/the-mtg-color-wheel.md)
 
-The local copy is maintained for convenient reference.
+The local copy is maintained in the repo for convenient reference.
 All credit for the color wheel analysis belongs to the original author.
 
 ---
@@ -679,7 +678,7 @@ of Hasbro, Inc. This project is not affiliated with, endorsed by, or sponsored
 by Wizards of the Coast. All game-related terminology is used for educational
 and analytical purposes under fair use.*
 """)
-    return references,
+    return
 
 
 if __name__ == "__main__":

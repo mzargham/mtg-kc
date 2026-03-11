@@ -131,28 +131,55 @@ def test_structure_discovery_shard_wedge(mtg_kc):
 
 # --- REQ-DEMO-06, REQ-VV-03, REQ-VV-04 ---
 
-@pytest.mark.skip(reason="WP5: promotion demo not yet implemented in notebook")
-def test_promote_causes_validation_fail(mtg_kc):
-    """REQ-DEMO-06: after promoting structure to required, all 10 faces fail SHACL."""
-    # promote_to_attribute modifies the schema in place;
-    # use a fresh schema + instance for isolation
-    sb = SchemaBuilder(namespace="mtg_promote")
-    sb.add_vertex_type("Color")
-    sb.add_edge_type("ColorPair",
-                     attributes={"disposition": vocab("adjacent", "opposite")})
-    sb.add_face_type("ColorTriple",
-                     attributes={"structure": {"vocab": vocab("shard", "wedge"), "required": False}})
+def test_promote_causes_validation_fail():
+    """REQ-DEMO-06, REQ-VV-03: after promoting structure to required, all 10 faces fail SHACL."""
+    from models.mtg import build_mtg_schema, QUERIES_DIR
+    from demo.demo_instance import build_mtg_instance
 
+    # Build a fresh schema and promote structure to required
+    sb = build_mtg_schema()
     sb.promote_to_attribute(
         type="ColorTriple",
         attribute="structure",
         vocab=vocab("shard", "wedge"),
         required=True,
     )
-    # Re-validate: all faces should now fail
-    # kc_new = KnowledgeComplex(schema=sb)
-    # ... add all vertices, edges, faces without structure ...
-    # for face_id in face_ids:
-    #     with pytest.raises(ValidationError):
-    #         kc_new.add_face(face_id, ...)
-    pytest.skip("Full implementation pending WP5")
+
+    # Build a new KC with the promoted schema — faces lack structure, so they should fail
+    kc_new = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
+
+    # Add all vertices and edges (these should succeed)
+    colors = ["White", "Blue", "Black", "Red", "Green"]
+    for c in colors:
+        kc_new.add_vertex(c, type="Color")
+
+    adjacent = [("White", "Blue"), ("Blue", "Black"), ("Black", "Red"),
+                ("Red", "Green"), ("Green", "White")]
+    opposite = [("White", "Black"), ("White", "Red"), ("Blue", "Green"),
+                ("Blue", "Red"), ("Black", "Green")]
+
+    for a, b in adjacent:
+        kc_new.add_edge(f"{a}{b}", type="ColorPair", vertices={a, b}, disposition="adjacent")
+    for a, b in opposite:
+        kc_new.add_edge(f"{a}{b}", type="ColorPair", vertices={a, b}, disposition="opposite")
+
+    # Every face should fail validation — structure is now required but not provided
+    fail_count = 0
+    face_specs = [
+        ("WUB", ["WhiteBlue", "BlueBlack", "WhiteBlack"]),
+        ("WUR", ["WhiteBlue", "BlueRed", "WhiteRed"]),
+        ("WUG", ["WhiteBlue", "BlueGreen", "GreenWhite"]),
+        ("WBR", ["WhiteBlack", "BlackRed", "WhiteRed"]),
+        ("WBG", ["WhiteBlack", "BlackGreen", "GreenWhite"]),
+        ("WRG", ["WhiteRed", "RedGreen", "GreenWhite"]),
+        ("UBR", ["BlueBlack", "BlackRed", "BlueRed"]),
+        ("UBG", ["BlueBlack", "BlackGreen", "BlueGreen"]),
+        ("URG", ["BlueRed", "RedGreen", "BlueGreen"]),
+        ("BRG", ["BlackRed", "RedGreen", "BlackGreen"]),
+    ]
+    for face_id, boundary in face_specs:
+        with pytest.raises(ValidationError):
+            kc_new.add_face(face_id, type="ColorTriple", boundary=boundary)
+        fail_count += 1
+
+    assert fail_count == 10, f"Expected 10 validation failures, got {fail_count}"
