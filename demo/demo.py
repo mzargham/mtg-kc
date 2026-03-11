@@ -71,7 +71,7 @@ def cell_imports():
 # ============================================================
 @app.cell
 def cell_0_intro(mo):
-    intro = mo.md("""
+    return (mo.md("""
 # Knowledge Complex: The MTG Color Pentagon
 
 This notebook demonstrates the **knowledge complex** framework — a typed
@@ -115,25 +115,14 @@ alone.
 5. **Discovery** — SPARQL reveals shard/wedge structure without pre-assertion
 6. **Promotion** — codify the discovery; observe schema/data tension
 7. **Horizon** — where this goes next
-""")
-    return (intro,)
+"""),)
 
 
 # ============================================================
-# Cell 1: Schema Authoring
+# Cell 1a: Build schema (compute)
 # ============================================================
 @app.cell
-def cell_1_schema(mo, SchemaBuilder, vocab, text):
-    _narrative = mo.md("""
-## 1. Schema Authoring
-
-We define three types using the `SchemaBuilder` DSL. Each `add_*_type` call
-simultaneously generates OWL class axioms (for inference) and SHACL shapes
-(for validation) — the **single-call invariant** (H3). No RDF is written
-directly; the internal representation is accessible via `dump_owl()` and
-`dump_shacl()` but never required.
-""")
-
+def cell_1a_build_schema(SchemaBuilder, vocab, text):
     sb = SchemaBuilder(namespace="mtg")
 
     sb.add_vertex_type("Color", attributes={
@@ -180,31 +169,45 @@ directly; the internal representation is accessible via `dump_owl()` and
         "example_decks": text(multiple=True, required=False),
     })
 
-    _schema_dumps = mo.accordion({
-        "OWL Ontology (Turtle)": mo.md(f"```turtle\n{sb.dump_owl()}\n```"),
-        "SHACL Shapes (Turtle)": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
-    })
-
-    schema_output = mo.vstack([_narrative, _schema_dumps])
-    return (sb, schema_output)
+    return (sb,)
 
 
 # ============================================================
-# Cell 2: The Five Colors
+# Cell 1b: Display schema (display)
 # ============================================================
 @app.cell
-def cell_2_colors(mo, nx, plt, _np, sb, build_mtg_instance, extract_attr):
+def cell_1b_display_schema(mo, sb):
+    return (mo.vstack([
+        mo.md("""
+## 1. Schema Authoring
+
+We define three types using the `SchemaBuilder` DSL. Each `add_*_type` call
+simultaneously generates OWL class axioms (for inference) and SHACL shapes
+(for validation) — the **single-call invariant** (H3). No RDF is written
+directly; the internal representation is accessible via `dump_owl()` and
+`dump_shacl()` but never required.
+"""),
+        mo.accordion({
+            "OWL Ontology (Turtle)": mo.md(f"```turtle\n{sb.dump_owl()}\n```"),
+            "SHACL Shapes (Turtle)": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
+        }),
+    ]),)
+
+
+# ============================================================
+# Cell 2a: Build instance (compute)
+# ============================================================
+@app.cell
+def cell_2a_build_instance(sb, build_mtg_instance):
     kc = build_mtg_instance(schema=sb)
+    return (kc,)
 
-    _narrative = mo.md("""
-## 2. The Five Colors
 
-The MTG color wheel places five colors on a pentagon. Each color represents a
-distinct philosophy — a **goal** pursued via a characteristic **method**.
-Adjacent colors on the pentagon share common ground; opposite colors are in tension.
-""")
-
-    # Pentagon visualization
+# ============================================================
+# Cell 2b: Pentagon visualization + color cards (display)
+# ============================================================
+@app.cell
+def cell_2b_display_colors(mo, nx, plt, _np, kc, extract_attr):
     _color_names = ["White", "Blue", "Black", "Red", "Green"]
     _color_hex = {
         "White": "#F9FAF4", "Blue": "#0E68AB",
@@ -218,44 +221,34 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
     _G = nx.Graph()
     _G.add_nodes_from(_color_names)
 
-    # Query edges to get disposition data
-    edge_df = kc.query("edges_by_disposition")
-
+    _edge_df = kc.query("edges_by_disposition")
     _adjacent_edges = []
     _opposite_edges = []
-    for _, _r in edge_df.iterrows():
+    for _, _r in _edge_df.iterrows():
         _v1 = str(_r["v1"]).split("#")[-1]
         _v2 = str(_r["v2"]).split("#")[-1]
-        _disp = str(_r["disposition"])
-        if _disp == "adjacent":
+        if str(_r["disposition"]) == "adjacent":
             _adjacent_edges.append((_v1, _v2))
         else:
             _opposite_edges.append((_v1, _v2))
 
     _G.add_edges_from(_adjacent_edges + _opposite_edges)
 
-    # Pentagon layout: White at top, then clockwise Blue, Black, Red, Green
     _angles = [_np.pi / 2 + 2 * _np.pi * i / 5 for i in range(5)]
-    _pos = {name: (_np.cos(a), _np.sin(a)) for name, a in zip(_color_names, _angles)}
+    _pos = {n: (_np.cos(a), _np.sin(a)) for n, a in zip(_color_names, _angles)}
 
     _fig, _ax = plt.subplots(1, 1, figsize=(7, 7))
     _ax.set_aspect("equal")
-
-    # Draw opposite edges first (behind)
     nx.draw_networkx_edges(_G, _pos, edgelist=_opposite_edges, ax=_ax,
                            style="dashed", edge_color="#999999", width=1.5, alpha=0.5)
-    # Draw adjacent edges (front)
     nx.draw_networkx_edges(_G, _pos, edgelist=_adjacent_edges, ax=_ax,
                            style="solid", edge_color="#333333", width=2.5)
-
-    # Draw nodes
     for _name in _color_names:
         _x, _y = _pos[_name]
         _ax.scatter(_x, _y, s=1200, c=_color_hex[_name], edgecolors="black",
                     linewidths=2, zorder=5)
         _ax.text(_x, _y, _name[0], ha="center", va="center",
                  fontsize=16, fontweight="bold", color=_text_color[_name], zorder=6)
-
     _ax.legend(
         handles=[
             plt.Line2D([0], [0], color="#333333", linewidth=2.5, label="Adjacent"),
@@ -267,7 +260,6 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
     _ax.axis("off")
     plt.tight_layout()
 
-    # Color persona cards
     _color_data = {
         "White": {"goal": "peace", "method": "order"},
         "Blue": {"goal": "perfection", "method": "knowledge"},
@@ -281,59 +273,45 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
     for _name in _color_names:
         _g = _color_data[_name]["goal"]
         _m = _color_data[_name]["method"]
-        _personas = extract_attr(_graph_ttl, _name, "persona")
-        _at_bests = extract_attr(_graph_ttl, _name, "at_best")
-        _at_worsts = extract_attr(_graph_ttl, _name, "at_worst")
+        _persona = (extract_attr(_graph_ttl, _name, "persona") or [""])[0]
+        _at_best = (extract_attr(_graph_ttl, _name, "at_best") or [""])[0]
+        _at_worst = (extract_attr(_graph_ttl, _name, "at_worst") or [""])[0]
         _behaviors = extract_attr(_graph_ttl, _name, "example_behaviors")
+        _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
 
-        _persona_text = _personas[0] if _personas else ""
-        _at_best_text = _at_bests[0] if _at_bests else ""
-        _at_worst_text = _at_worsts[0] if _at_worsts else ""
-        _behaviors_text = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
-
-        _card = mo.callout(
+        _color_cards.append(mo.callout(
             mo.md(f"""**Goal:** {_g} | **Method:** {_m}
 
-> *{_persona_text}*
+> *{_persona}*
 
-**At best:** {_at_best_text}
+**At best:** {_at_best}
 
-**At worst:** {_at_worst_text}
+**At worst:** {_at_worst}
 
 **Example behaviors:**
-{_behaviors_text}
+{_btext}
 """),
-            title=_name,
-            kind="info",
-        )
-        _color_cards.append(_card)
+            title=_name, kind="info",
+        ))
 
-    _colors_display = mo.accordion({
-        name: _color_cards[i] for i, name in enumerate(_color_names)
-    })
+    return (mo.vstack([
+        mo.md("""
+## 2. The Five Colors
 
-    colors_output = mo.vstack([_narrative, mo.as_html(_fig), _colors_display])
-    return (kc, edge_df, colors_output)
+The MTG color wheel places five colors on a pentagon. Each color represents a
+distinct philosophy — a **goal** pursued via a characteristic **method**.
+Adjacent colors on the pentagon share common ground; opposite colors are in tension.
+"""),
+        mo.as_html(_fig),
+        mo.accordion({n: _color_cards[i] for i, n in enumerate(_color_names)}),
+    ]),)
 
 
 # ============================================================
-# Cell 3: The Ten Pairs
+# Cell 3: The Ten Pairs (display)
 # ============================================================
 @app.cell
 def cell_3_pairs(mo, kc, extract_attr):
-    _narrative = mo.md("""
-## 3. The Ten Pairs
-
-Each pair of colors forms a **guild** with a distinct **theme**. The 10 pairs
-split into two groups based on their position on the pentagon:
-
-- **Adjacent** (5 pairs) — neighboring colors that share common ground
-- **Opposite** (5 pairs) — colors across the pentagon, in creative tension
-
-This `disposition` attribute is asserted on every edge. It will later become
-the key to discovering face structure.
-""")
-
     _graph_ttl = kc.dump_graph()
 
     _guild_map = {
@@ -346,102 +324,79 @@ the key to discovering face structure.
         "WB": "Tribalism", "WR": "Heroism", "UG": "Truth-Seeking",
         "UR": "Creativity", "BG": "Profanity",
     }
-    _adjacent_order = ["WU", "UB", "BR", "RG", "GW"]
-    _opposite_order = ["WB", "WR", "UG", "UR", "BG"]
 
     def _make_pair_card(_pid):
         _guild = _guild_map[_pid]
         _theme = _theme_map[_pid]
-        _personas = extract_attr(_graph_ttl, _pid, "persona")
-        _at_bests = extract_attr(_graph_ttl, _pid, "at_best")
-        _at_worsts = extract_attr(_graph_ttl, _pid, "at_worst")
+        _persona = (extract_attr(_graph_ttl, _pid, "persona") or [""])[0]
+        _at_best = (extract_attr(_graph_ttl, _pid, "at_best") or [""])[0]
+        _at_worst = (extract_attr(_graph_ttl, _pid, "at_worst") or [""])[0]
         _behaviors = extract_attr(_graph_ttl, _pid, "example_behaviors")
-
-        _persona_text = _personas[0] if _personas else ""
-        _at_best_text = _at_bests[0] if _at_bests else ""
-        _at_worst_text = _at_worsts[0] if _at_worsts else ""
-        _behaviors_text = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
-
+        _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
         return mo.callout(
             mo.md(f"""**Guild:** {_guild} | **Theme:** {_theme}
 
-> *{_persona_text}*
+> *{_persona}*
 
-**At best:** {_at_best_text}
+**At best:** {_at_best}
 
-**At worst:** {_at_worst_text}
+**At worst:** {_at_worst}
 
 **Example behaviors:**
-{_behaviors_text}
+{_btext}
 """),
-            title=f"{_pid} — {_guild}",
-            kind="info",
+            title=f"{_pid} — {_guild}", kind="info",
         )
 
-    _adjacent_cards = mo.accordion({
-        f"{_pid} — {_guild_map[_pid]}": _make_pair_card(_pid) for _pid in _adjacent_order
-    })
-    _opposite_cards = mo.accordion({
-        f"{_pid} — {_guild_map[_pid]}": _make_pair_card(_pid) for _pid in _opposite_order
-    })
+    _adj = ["WU", "UB", "BR", "RG", "GW"]
+    _opp = ["WB", "WR", "UG", "UR", "BG"]
 
-    _pairs_display = mo.tabs({
-        "Adjacent (pentagon edges)": _adjacent_cards,
-        "Opposite (star diagonals)": _opposite_cards,
-    })
+    return (mo.vstack([
+        mo.md("""
+## 3. The Ten Pairs
 
-    pairs_output = mo.vstack([_narrative, _pairs_display])
-    return (pairs_output,)
+Each pair of colors forms a **guild** with a distinct **theme**. The 10 pairs
+split into two groups based on their position on the pentagon:
+
+- **Adjacent** (5 pairs) — neighboring colors that share common ground
+- **Opposite** (5 pairs) — colors across the pentagon, in creative tension
+
+This `disposition` attribute is asserted on every edge. It will later become
+the key to discovering face structure.
+"""),
+        mo.tabs({
+            "Adjacent (pentagon edges)": mo.accordion({
+                f"{p} — {_guild_map[p]}": _make_pair_card(p) for p in _adj
+            }),
+            "Opposite (star diagonals)": mo.accordion({
+                f"{p} — {_guild_map[p]}": _make_pair_card(p) for p in _opp
+            }),
+        }),
+    ]),)
 
 
 # ============================================================
-# Cell 4: Verification (H4)
+# Cell 4: Verification (H4) (display)
 # ============================================================
 @app.cell
 def cell_4_verification(mo, kc, ValidationError):
-    _narrative = mo.md("""
-## 4. Verification
-
-SHACL validation runs on every `add_*` call — the **validation-on-write**
-invariant. If an element violates the schema (wrong vocabulary value, missing
-required attribute, broken boundary), the framework rejects it immediately
-and rolls back the assertion.
-
-Our instance contains 25 valid elements. Let's demonstrate what happens
-when we try to add a malformed one.
-""")
-
-    # Show element counts
-    _vertices_df = kc.query("vertices")
-    _n_vertices = len(_vertices_df)
-    _edges_df = kc.query("edges_by_disposition")
-    _n_edges = len(_edges_df)
-    _faces_df = kc.query("faces_by_edge_pattern")
-    _n_faces = len(_faces_df)
+    _n_v = len(kc.query("vertices"))
+    _n_e = len(kc.query("edges_by_disposition"))
+    _n_f = len(kc.query("faces_by_edge_pattern"))
 
     _counts = mo.callout(
-        mo.md(f"**{_n_vertices} vertices** (Colors) + **{_n_edges} edges** (ColorPairs) + **{_n_faces} faces** (ColorTriples) = **{_n_vertices + _n_edges + _n_faces} elements** — all valid."),
-        title="Current complex",
-        kind="success",
+        mo.md(f"**{_n_v} vertices** (Colors) + **{_n_e} edges** (ColorPairs) + **{_n_f} faces** (ColorTriples) = **{_n_v + _n_e + _n_f} elements** — all valid."),
+        title="Current complex", kind="success",
     )
 
-    # Deliberate failure: try to add a vertex with an invalid vocab value
     try:
         kc.add_vertex("InvalidColor", type="Color",
-            goal="chaos",  # not in vocab: peace, perfection, satisfaction, freedom, harmony
-            method="order",
-            persona="This should fail.",
-            at_best="Never gets here.",
-            at_worst="Never gets here.",
-            example_behaviors=["Failing"],
-        )
-        _error_display = mo.callout(
-            mo.md("Unexpectedly succeeded — this should not happen."),
-            title="Error",
-            kind="danger",
-        )
+            goal="chaos", method="order",
+            persona="This should fail.", at_best="N/A.", at_worst="N/A.",
+            example_behaviors=["Failing"])
+        _error = mo.callout(mo.md("Unexpectedly succeeded."), title="Error", kind="danger")
     except ValidationError as _e:
-        _error_display = mo.callout(
+        _error = mo.callout(
             mo.md(f"""Attempting to add a Color with `goal="chaos"` — a value not in the
 controlled vocabulary `{{peace, perfection, satisfaction, freedom, harmony}}`.
 
@@ -451,20 +406,99 @@ The framework rejects it immediately:
 {_e.report[:1500]}
 ```
 """),
-            title="SHACL validation failure (expected)",
-            kind="danger",
+            title="SHACL validation failure (expected)", kind="danger",
         )
 
-    verification_output = mo.vstack([_narrative, _counts, _error_display])
-    return (verification_output,)
+    return (mo.vstack([
+        mo.md("""
+## 4. Verification
+
+SHACL validation runs on every `add_*` call — the **validation-on-write**
+invariant. If an element violates the schema (wrong vocabulary value, missing
+required attribute, broken boundary), the framework rejects it immediately
+and rolls back the assertion.
+
+Our instance contains 25 valid elements. Let's demonstrate what happens
+when we try to add a malformed one.
+"""),
+        _counts,
+        _error,
+    ]),)
 
 
 # ============================================================
-# Cell 5: Discovery (H5)
+# Cell 5: Discovery (H5) (display)
 # ============================================================
 @app.cell
 def cell_5_discovery(mo, pd, kc, extract_attr):
-    _narrative = mo.md("""
+    _df = kc.query("faces_by_edge_pattern")
+
+    _results = []
+    for _, _r in _df.iterrows():
+        _face = str(_r["face"]).split("#")[-1]
+        _disps = [str(_r["d1"]), str(_r["d2"]), str(_r["d3"])]
+        _n_adj = _disps.count("adjacent")
+        _n_opp = _disps.count("opposite")
+        _results.append({
+            "face": _face,
+            "adjacent": _n_adj,
+            "opposite": _n_opp,
+            "discovered_structure": "shard" if _n_adj == 2 else "wedge",
+        })
+    _discovery_df = pd.DataFrame(_results)
+
+    _essay = {
+        "WUB": ("esper", "shard"), "WUG": ("bant", "shard"),
+        "WRG": ("naya", "shard"), "UBR": ("grixis", "shard"),
+        "BRG": ("jund", "shard"),
+        "WUR": ("jeskai", "wedge"), "WBR": ("mardu", "wedge"),
+        "WBG": ("abzan", "wedge"), "UBG": ("sultai", "wedge"),
+        "URG": ("temur", "wedge"),
+    }
+
+    _comparison = []
+    for _, _r in _discovery_df.iterrows():
+        _f = _r["face"]
+        _clan, _es = _essay.get(_f, ("?", "?"))
+        _comparison.append({
+            "Face": _f, "Clan": _clan,
+            "Adj edges": _r["adjacent"], "Opp edges": _r["opposite"],
+            "Discovered": _r["discovered_structure"],
+            "Essay says": _es,
+            "Match": "yes" if _r["discovered_structure"] == _es else "NO",
+        })
+    _comp_df = pd.DataFrame(_comparison)
+
+    _all_match = all(r["Match"] == "yes" for r in _comparison)
+
+    # Triple persona cards
+    _graph_ttl = kc.dump_graph()
+    _shards = [r for r in _comparison if r["Discovered"] == "shard"]
+    _wedges = [r for r in _comparison if r["Discovered"] == "wedge"]
+
+    def _make_triple_card(_fid, _clan):
+        _persona = (extract_attr(_graph_ttl, _fid, "persona") or [""])[0]
+        _at_best = (extract_attr(_graph_ttl, _fid, "at_best") or [""])[0]
+        _at_worst = (extract_attr(_graph_ttl, _fid, "at_worst") or [""])[0]
+        _behaviors = extract_attr(_graph_ttl, _fid, "example_behaviors")
+        _btext = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
+        return mo.callout(
+            mo.md(f"""**Clan:** {_clan.capitalize()}
+
+> *{_persona}*
+
+**At best:** {_at_best}
+
+**At worst:** {_at_worst}
+
+**Example behaviors:**
+{_btext}
+"""),
+            title=f"{_fid} — {_clan.capitalize()}", kind="info",
+        )
+
+    return (mo.vstack([
+        mo.md("""
 ## 5. Discovery: Structure from Topology
 
 Here is the narrative climax. The `ColorTriple` schema has an optional
@@ -479,141 +513,65 @@ per face, we classify:
 - **Wedge** — 1 adjacent + 2 opposite (2 colors flanking a gap)
 
 This classification emerges from the topology alone — no pre-assertion needed.
-""")
-
-    # Run the discovery query
-    _df = kc.query("faces_by_edge_pattern")
-
-    # Classify each face
-    _results = []
-    for _, _r in _df.iterrows():
-        _face = str(_r["face"]).split("#")[-1]
-        _dispositions = [str(_r["d1"]), str(_r["d2"]), str(_r["d3"])]
-        _n_adj = _dispositions.count("adjacent")
-        _n_opp = _dispositions.count("opposite")
-        _structure = "shard" if _n_adj == 2 else "wedge"
-        _results.append({
-            "face": _face,
-            "edges": ", ".join(str(_r[e]).split("#")[-1] for e in ["e1", "e2", "e3"]),
-            "adjacent": _n_adj,
-            "opposite": _n_opp,
-            "discovered_structure": _structure,
-        })
-
-    _discovery_df = pd.DataFrame(_results)
-
-    # Compare with essay's classification
-    _essay_classification = {
-        "WUB": ("esper", "shard"), "WUG": ("bant", "shard"),
-        "WRG": ("naya", "shard"), "UBR": ("grixis", "shard"),
-        "BRG": ("jund", "shard"),
-        "WUR": ("jeskai", "wedge"), "WBR": ("mardu", "wedge"),
-        "WBG": ("abzan", "wedge"), "UBG": ("sultai", "wedge"),
-        "URG": ("temur", "wedge"),
-    }
-
-    _comparison = []
-    for _, _r in _discovery_df.iterrows():
-        _face = _r["face"]
-        _clan, _essay_struct = _essay_classification.get(_face, ("?", "?"))
-        _match = "yes" if _r["discovered_structure"] == _essay_struct else "NO"
-        _comparison.append({
-            "Face": _face,
-            "Clan": _clan,
-            "Adj edges": _r["adjacent"],
-            "Opp edges": _r["opposite"],
-            "Discovered": _r["discovered_structure"],
-            "Essay says": _essay_struct,
-            "Match": _match,
-        })
-
-    comparison_df = pd.DataFrame(_comparison)
-
-    _compare_narrative = mo.md("""
+"""),
+        mo.as_html(_comp_df),
+        mo.md("""
 ### Compare with the source essay
 
 The essay "The MTG Color Wheel (&amp; Humanity)" independently classifies
 these 10 triples as shards or wedges. Does our topological discovery agree?
-""")
-
-    _all_match = all(r["Match"] == "yes" for r in _comparison)
-    _match_callout = mo.callout(
-        mo.md("**All 10 classifications match.** Topology reproduces domain knowledge."),
-        title="Result",
-        kind="success" if _all_match else "warn",
-    )
-
-    # Triple persona cards grouped by structure
-    _graph_ttl = kc.dump_graph()
-
-    _shards = [r for r in _comparison if r["Discovered"] == "shard"]
-    _wedges = [r for r in _comparison if r["Discovered"] == "wedge"]
-
-    def _make_triple_card(_face_id, _clan):
-        _personas = extract_attr(_graph_ttl, _face_id, "persona")
-        _at_bests = extract_attr(_graph_ttl, _face_id, "at_best")
-        _at_worsts = extract_attr(_graph_ttl, _face_id, "at_worst")
-        _behaviors = extract_attr(_graph_ttl, _face_id, "example_behaviors")
-
-        _persona_text = _personas[0] if _personas else ""
-        _at_best_text = _at_bests[0] if _at_bests else ""
-        _at_worst_text = _at_worsts[0] if _at_worsts else ""
-        _behaviors_text = "\n".join(f"- {b}" for b in _behaviors) if _behaviors else ""
-
-        return mo.callout(
-            mo.md(f"""**Clan:** {_clan.capitalize()}
-
-> *{_persona_text}*
-
-**At best:** {_at_best_text}
-
-**At worst:** {_at_worst_text}
-
-**Example behaviors:**
-{_behaviors_text}
 """),
-            title=f"{_face_id} — {_clan.capitalize()}",
-            kind="info",
-        )
-
-    _shard_cards = mo.accordion({
-        f"{r['Face']} — {r['Clan'].capitalize()}": _make_triple_card(r["Face"], r["Clan"])
-        for r in _shards
-    })
-    _wedge_cards = mo.accordion({
-        f"{r['Face']} — {r['Clan'].capitalize()}": _make_triple_card(r["Face"], r["Clan"])
-        for r in _wedges
-    })
-
-    _triple_narrative = mo.md("""
+        mo.callout(
+            mo.md("**All 10 classifications match.** Topology reproduces domain knowledge."),
+            title="Result", kind="success" if _all_match else "warn",
+        ),
+        mo.md("""
 ### The Ten Triples
 
 Now grouped by their **discovered** structure — not an asserted attribute,
 but a classification that emerged from counting edge dispositions.
-""")
-
-    _triples_display = mo.tabs({
-        "Shards (2 adj + 1 opp)": _shard_cards,
-        "Wedges (1 adj + 2 opp)": _wedge_cards,
-    })
-
-    discovery_output = mo.vstack([
-        _narrative,
-        mo.as_html(comparison_df),
-        _compare_narrative,
-        _match_callout,
-        _triple_narrative,
-        _triples_display,
-    ])
-    return (discovery_output, comparison_df)
+"""),
+        mo.tabs({
+            "Shards (2 adj + 1 opp)": mo.accordion({
+                f"{r['Face']} — {r['Clan'].capitalize()}": _make_triple_card(r["Face"], r["Clan"])
+                for r in _shards
+            }),
+            "Wedges (1 adj + 2 opp)": mo.accordion({
+                f"{r['Face']} — {r['Clan'].capitalize()}": _make_triple_card(r["Face"], r["Clan"])
+                for r in _wedges
+            }),
+        }),
+    ]),)
 
 
 # ============================================================
-# Cell 6: Promotion
+# Cell 6: Promotion (display)
 # ============================================================
 @app.cell
 def cell_6_promotion(mo, sb, kc, vocab, ValidationError):
-    _narrative = mo.md("""
+    sb.promote_to_attribute("ColorTriple", "structure",
+                            vocab("shard", "wedge"), required=True)
+
+    try:
+        kc.add_vertex("Colorless", type="Color",
+            goal="peace", method="order",
+            persona="Test.", at_best="Test.", at_worst="Test.",
+            example_behaviors=["Test"])
+        _result = mo.callout(
+            mo.md("After promotion, `structure` is required on all `ColorTriple` faces. "
+                  "Any new face added without `structure` will be rejected. "
+                  "The 10 existing faces would also fail re-validation — "
+                  "they were valid under the old schema, but the schema has moved on."),
+            title="Schema/data tension", kind="warn",
+        )
+    except ValidationError as _e:
+        _result = mo.callout(
+            mo.md(f"Validation failed:\n\n```\n{_e.report[:1000]}\n```"),
+            title="Schema enforcement", kind="danger",
+        )
+
+    return (mo.vstack([
+        mo.md("""
 ## 6. Promotion: Discovery to Schema
 
 We've discovered that every face has a classifiable `structure`. The natural
@@ -624,39 +582,12 @@ attribute of `ColorTriple`.
 After promotion, **every existing face fails validation** because none has
 `structure` asserted. This is the schema/data tension: the ontology has
 evolved, but the data hasn't caught up.
-""")
-
-    # Promote structure to required
-    sb.promote_to_attribute("ColorTriple", "structure",
-                            vocab("shard", "wedge"), required=True)
-
-    _updated_shacl = mo.accordion({
-        "Updated SHACL Shapes": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
-    })
-
-    # Try to re-validate by adding a new vertex (should still work — promotion
-    # only affects ColorTriple faces, not Color vertices)
-    try:
-        kc.add_vertex("Colorless", type="Color",
-            goal="peace", method="order",
-            persona="Test.", at_best="Test.", at_worst="Test.",
-            example_behaviors=["Test"])
-        _promotion_result = mo.callout(
-            mo.md("After promotion, `structure` is required on all `ColorTriple` faces. "
-                  "Any new face added without `structure` will be rejected. "
-                  "The 10 existing faces would also fail re-validation — "
-                  "they were valid under the old schema, but the schema has moved on."),
-            title="Schema/data tension",
-            kind="warn",
-        )
-    except ValidationError as _e:
-        _promotion_result = mo.callout(
-            mo.md(f"Validation failed:\n\n```\n{_e.report[:1000]}\n```"),
-            title="Schema enforcement",
-            kind="danger",
-        )
-
-    _closing = mo.md("""
+"""),
+        mo.accordion({
+            "Updated SHACL Shapes": mo.md(f"```turtle\n{sb.dump_shacl()}\n```"),
+        }),
+        _result,
+        mo.md("""
 This is the **discovery-to-codification** workflow:
 
 1. Build instance with optional attributes
@@ -666,18 +597,16 @@ This is the **discovery-to-codification** workflow:
 
 The framework makes this loop safe: every step is validated, every change
 is atomic across OWL and SHACL.
-""")
-
-    promotion_output = mo.vstack([_narrative, _updated_shacl, _promotion_result, _closing])
-    return (promotion_output,)
+"""),
+    ]),)
 
 
 # ============================================================
-# Cell 7: Horizon
+# Cell 7: Horizon (display)
 # ============================================================
 @app.cell
 def cell_7_horizon(mo):
-    horizon = mo.md("""
+    return (mo.md("""
 ## 7. Horizon
 
 Two threads of future work extend this foundation in complementary directions.
@@ -721,16 +650,15 @@ sb.add_edge_type("PersonColorAffinity", attributes={
 
 The pentagon becomes a mirror: not just a taxonomy of philosophies,
 but a practical tool for understanding how they combine in individuals.
-""")
-    return (horizon,)
+"""),)
 
 
 # ============================================================
-# Cell 8: References & Acknowledgements
+# Cell 8: References & Acknowledgements (display)
 # ============================================================
 @app.cell
 def cell_8_references(mo):
-    references = mo.md("""
+    return (mo.md("""
 ## References & Acknowledgements
 
 This project uses the five Magic: The Gathering colors as its test case.
@@ -750,8 +678,7 @@ All credit for the color wheel analysis belongs to the original author.
 of Hasbro, Inc. This project is not affiliated with, endorsed by, or sponsored
 by Wizards of the Coast. All game-related terminology is used for educational
 and analytical purposes under fair use.*
-""")
-    return (references,)
+"""),)
 
 
 if __name__ == "__main__":
