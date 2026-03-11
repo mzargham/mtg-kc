@@ -109,6 +109,8 @@ This project uses the five Magic: The Gathering colors as its test case. The phi
 
 The local copy is maintained for convenient reference. All credit for the color wheel analysis belongs to the original author.
 
+Magic: The Gathering is a trademark and © Wizards of the Coast, a subsidiary of Hasbro, Inc. This project is not affiliated with, endorsed by, or sponsored by Wizards of the Coast. MTG content is used here for educational and analytical purposes only.
+
 ## See Also
 
 - `docs/PLAN.md` — work packages, sequence, review gates

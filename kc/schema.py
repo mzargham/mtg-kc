@@ -71,6 +71,51 @@ def vocab(*values: str) -> VocabDescriptor:
     return VocabDescriptor(values=tuple(values))
 
 
+@dataclass(frozen=True)
+class TextDescriptor:
+    """
+    Returned by text(). Marks an attribute as a free-text string (no controlled vocabulary).
+    Generates an OWL DatatypeProperty with xsd:string range and a SHACL property shape
+    with sh:datatype xsd:string but no sh:in constraint.
+    """
+    required: bool = True
+    multiple: bool = False
+
+    def __repr__(self) -> str:
+        parts = []
+        if not self.required:
+            parts.append("required=False")
+        if self.multiple:
+            parts.append("multiple=True")
+        return f"text({', '.join(parts)})"
+
+
+def text(*, required: bool = True, multiple: bool = False) -> TextDescriptor:
+    """
+    Declare a free-text string attribute.
+
+    Parameters
+    ----------
+    required : bool
+        If True (default), generates sh:minCount 1.
+    multiple : bool
+        If True, allows multiple values (no sh:maxCount).
+        If False (default), generates sh:maxCount 1.
+
+    Returns
+    -------
+    TextDescriptor
+
+    Example
+    -------
+    >>> text()
+    text()
+    >>> text(required=False, multiple=True)
+    text(required=False, multiple=True)
+    """
+    return TextDescriptor(required=required, multiple=multiple)
+
+
 class SchemaBuilder:
     """
     Author a knowledge complex schema: vertex types, edge types, face types.
@@ -108,6 +153,7 @@ class SchemaBuilder:
         self._owl_graph: Any = None   # rdflib.Graph, populated in _init_graphs()
         self._shacl_graph: Any = None # rdflib.Graph, populated in _init_graphs()
         self._types: dict[str, dict] = {}  # registry: name -> {kind, attributes}
+        self._attr_domains: dict[str, URIRef | None] = {}  # attr name → first domain or None if shared
         self._init_graphs()
 
     def _init_graphs(self) -> None:
@@ -130,7 +176,26 @@ class SchemaBuilder:
             g.bind(self._namespace, self._ns)
             g.bind(f"{self._namespace}s", self._nss)
 
-    def _add_attr_to_graphs(
+    def _set_owl_domain(self, attr_iri: URIRef, attr_name: str, type_iri: URIRef) -> None:
+        """Set rdfs:domain for a property, removing it if shared across types.
+
+        When a property appears on multiple types, setting multiple rdfs:domain
+        values causes RDFS inference to classify any individual with that property
+        as a member of ALL domain types — leading to spurious SHACL cross-type
+        violations. If the property already has a domain for a different type,
+        we remove all domain assertions (SHACL shapes handle per-type enforcement).
+        """
+        if attr_name not in self._attr_domains:
+            # First time seeing this attribute — set domain
+            self._attr_domains[attr_name] = type_iri
+            self._owl_graph.add((attr_iri, RDFS.domain, type_iri))
+        elif self._attr_domains[attr_name] is not None and self._attr_domains[attr_name] != type_iri:
+            # Shared across types — remove existing domain
+            self._owl_graph.remove((attr_iri, RDFS.domain, None))
+            self._attr_domains[attr_name] = None
+        # else: already None (shared) or same type — no action needed
+
+    def _add_vocab_attr_to_graphs(
         self,
         type_iri: URIRef,
         shape_iri: URIRef,
@@ -138,12 +203,12 @@ class SchemaBuilder:
         vocab_desc: VocabDescriptor,
         required: bool,
     ) -> None:
-        """Add an attribute's OWL property and SHACL property shape."""
+        """Add a vocab attribute's OWL property and SHACL property shape (with sh:in)."""
         attr_iri = self._ns[attr_name]
 
         # OWL: declare data property
         self._owl_graph.add((attr_iri, RDF.type, OWL.DatatypeProperty))
-        self._owl_graph.add((attr_iri, RDFS.domain, type_iri))
+        self._set_owl_domain(attr_iri, attr_name, type_iri)
         self._owl_graph.add((attr_iri, RDFS.range, XSD.string))
         self._owl_graph.add((attr_iri, RDFS.comment,
                              Literal(f"Allowed values: {', '.join(vocab_desc.values)}")))
@@ -162,7 +227,54 @@ class SchemaBuilder:
         Collection(self._shacl_graph, list_node,
                    [Literal(v) for v in vocab_desc.values])
 
-    def add_vertex_type(self, name: str) -> "SchemaBuilder":
+    def _add_text_attr_to_graphs(
+        self,
+        type_iri: URIRef,
+        shape_iri: URIRef,
+        attr_name: str,
+        text_desc: TextDescriptor,
+    ) -> None:
+        """Add a free-text attribute's OWL property and SHACL property shape (no sh:in)."""
+        attr_iri = self._ns[attr_name]
+
+        # OWL: declare data property
+        self._owl_graph.add((attr_iri, RDF.type, OWL.DatatypeProperty))
+        self._set_owl_domain(attr_iri, attr_name, type_iri)
+        self._owl_graph.add((attr_iri, RDFS.range, XSD.string))
+
+        # SHACL: create property shape
+        prop_shape = BNode()
+        self._shacl_graph.add((shape_iri, _SH.property, prop_shape))
+        self._shacl_graph.add((prop_shape, _SH.path, attr_iri))
+        self._shacl_graph.add((prop_shape, _SH.datatype, XSD.string))
+        self._shacl_graph.add((prop_shape, _SH.minCount,
+                               Literal(1 if text_desc.required else 0)))
+        if not text_desc.multiple:
+            self._shacl_graph.add((prop_shape, _SH.maxCount, Literal(1)))
+
+    def _add_attr_to_graphs(
+        self,
+        type_iri: URIRef,
+        shape_iri: URIRef,
+        attr_name: str,
+        descriptor: VocabDescriptor | TextDescriptor,
+        required: bool | None = None,
+    ) -> None:
+        """Dispatch to the appropriate attr handler based on descriptor type."""
+        if isinstance(descriptor, TextDescriptor):
+            self._add_text_attr_to_graphs(type_iri, shape_iri, attr_name, descriptor)
+        elif isinstance(descriptor, VocabDescriptor):
+            if required is None:
+                required = True
+            self._add_vocab_attr_to_graphs(type_iri, shape_iri, attr_name, descriptor, required)
+        else:
+            raise TypeError(f"Unknown attribute descriptor: {type(descriptor)}")
+
+    def add_vertex_type(
+        self,
+        name: str,
+        attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
+    ) -> "SchemaBuilder":
         """
         Declare a new vertex type (OWL subclass of KC:Vertex, a KC:Element, + SHACL node shape).
 
@@ -172,6 +284,9 @@ class SchemaBuilder:
         ----------
         name : str
             Class name within the user namespace.
+        attributes : dict, optional
+            Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
+            or dict with "vocab"/"text" key and optional "required" flag).
 
         Returns
         -------
@@ -180,7 +295,8 @@ class SchemaBuilder:
         from kc.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
-        self._types[name] = {"kind": "vertex"}
+        attributes = attributes or {}
+        self._types[name] = {"kind": "vertex", "attributes": dict(attributes)}
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
@@ -192,12 +308,38 @@ class SchemaBuilder:
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
         self._shacl_graph.add((shape_iri, _SH.targetClass, type_iri))
 
+        for attr_name, attr_spec in attributes.items():
+            self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
+
         return self
+
+    def _dispatch_attr(
+        self,
+        type_iri: URIRef,
+        shape_iri: URIRef,
+        attr_name: str,
+        attr_spec: VocabDescriptor | TextDescriptor | dict,
+    ) -> None:
+        """Route an attribute spec to the correct graph-writing method."""
+        if isinstance(attr_spec, (VocabDescriptor, TextDescriptor)):
+            self._add_attr_to_graphs(type_iri, shape_iri, attr_name, attr_spec)
+        elif isinstance(attr_spec, dict):
+            if "vocab" in attr_spec:
+                vd = attr_spec["vocab"]
+                req = attr_spec.get("required", True)
+                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, vd, required=req)
+            elif "text" in attr_spec:
+                td = attr_spec["text"]
+                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, td)
+            else:
+                raise TypeError(f"Attribute dict must have 'vocab' or 'text' key: {attr_spec}")
+        else:
+            raise TypeError(f"Unknown attribute spec type: {type(attr_spec)}")
 
     def add_edge_type(
         self,
         name: str,
-        attributes: dict[str, VocabDescriptor | Any] | None = None,
+        attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new edge type (OWL subclass of KC:Edge, a KC:Element, + SHACL property shapes).
@@ -209,8 +351,8 @@ class SchemaBuilder:
         name : str
             Class name within the user namespace.
         attributes : dict, optional
-            Mapping of attribute name to VocabDescriptor (or plain type annotation).
-            Each attribute generates both an OWL data property and a SHACL sh:property.
+            Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
+            or dict with "vocab"/"text" key and optional "required" flag).
 
         Returns
         -------
@@ -233,12 +375,7 @@ class SchemaBuilder:
         self._shacl_graph.add((shape_iri, _SH.targetClass, type_iri))
 
         for attr_name, attr_spec in attributes.items():
-            if isinstance(attr_spec, VocabDescriptor):
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, attr_spec, required=True)
-            else:
-                vd = attr_spec["vocab"]
-                req = attr_spec.get("required", True)
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, vd, required=req)
+            self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
         return self
 
@@ -286,12 +423,7 @@ class SchemaBuilder:
         self._shacl_graph.add((shape_iri, _SH.targetClass, type_iri))
 
         for attr_name, attr_spec in attributes.items():
-            if isinstance(attr_spec, VocabDescriptor):
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, attr_spec, required=True)
-            else:
-                vd = attr_spec["vocab"]
-                req = attr_spec.get("required", True)
-                self._add_attr_to_graphs(type_iri, shape_iri, attr_name, vd, required=req)
+            self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
         return self
 
@@ -299,7 +431,8 @@ class SchemaBuilder:
         self,
         type: str,
         attribute: str,
-        vocab: VocabDescriptor,
+        vocab: VocabDescriptor | None = None,
+        text: TextDescriptor | None = None,
         required: bool = True,
     ) -> "SchemaBuilder":
         """
@@ -313,13 +446,16 @@ class SchemaBuilder:
         Parameters
         ----------
         type : str
-            The type name (must have been registered via add_face_type or add_edge_type).
+            The type name (must have been registered via add_*_type).
         attribute : str
             Attribute name to add or upgrade.
-        vocab : VocabDescriptor
+        vocab : VocabDescriptor, optional
             Controlled vocabulary for the attribute.
+        text : TextDescriptor, optional
+            Free-text descriptor for the attribute.
         required : bool
             If True, generates sh:minCount 1 (was previously 0 or absent).
+            Overrides the descriptor's own required flag.
 
         Returns
         -------
@@ -328,6 +464,8 @@ class SchemaBuilder:
         from kc.exceptions import SchemaError
         if type not in self._types:
             raise SchemaError(f"Type '{type}' is not registered")
+        if vocab is None and text is None:
+            raise SchemaError("promote_to_attribute requires either vocab or text descriptor")
 
         type_iri = self._ns[type]
         shape_iri = self._nss[f"{type}Shape"]
@@ -352,14 +490,22 @@ class SchemaBuilder:
                 self._shacl_graph.remove((shape_iri, _SH.property, prop_node))
 
         # Re-add with new settings
-        self._add_attr_to_graphs(type_iri, shape_iri, attribute, vocab, required)
+        if vocab is not None:
+            self._add_attr_to_graphs(type_iri, shape_iri, attribute, vocab, required=required)
+        else:
+            # Override the text descriptor's required flag with the promote call's value
+            effective = TextDescriptor(required=required, multiple=text.multiple)
+            self._add_attr_to_graphs(type_iri, shape_iri, attribute, effective)
 
         # Update type registry
         if "attributes" not in self._types[type]:
             self._types[type]["attributes"] = {}
-        self._types[type]["attributes"][attribute] = {
-            "vocab": vocab, "required": required
-        }
+        if vocab is not None:
+            self._types[type]["attributes"][attribute] = {
+                "vocab": vocab, "required": required
+            }
+        else:
+            self._types[type]["attributes"][attribute] = text
 
         return self
 

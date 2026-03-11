@@ -33,27 +33,27 @@ _OPPOSITE_PAIRS = {
     frozenset({"Black", "Green"}),
 }
 
-# Ground-truth face classification (sorted color triple → pattern)
-# ooa = two opposite edges + one adjacent; oaa = one opposite + two adjacent
+# Ground-truth face classification (sorted color triple → structure)
+# wedge = two opposite edges + one adjacent (ooa); shard = one opposite + two adjacent (oaa)
 # Computed from MTG color wheel: adjacent = pentagon edges, opposite = diagonals.
-# 5 ooa + 5 oaa = 10 total.
-_FACE_PATTERNS: dict[frozenset, str] = {
-    frozenset({"White", "Blue", "Black"}):  "oaa",
-    frozenset({"White", "Blue", "Red"}):    "ooa",
-    frozenset({"White", "Blue", "Green"}):  "oaa",
-    frozenset({"White", "Black", "Red"}):   "ooa",
-    frozenset({"White", "Black", "Green"}): "ooa",
-    frozenset({"White", "Red", "Green"}):   "oaa",
-    frozenset({"Blue", "Black", "Red"}):    "oaa",
-    frozenset({"Blue", "Black", "Green"}):  "ooa",
-    frozenset({"Blue", "Red", "Green"}):    "ooa",
-    frozenset({"Black", "Red", "Green"}):   "oaa",
+# 5 wedge + 5 shard = 10 total.
+_FACE_STRUCTURES: dict[frozenset, str] = {
+    frozenset({"White", "Blue", "Black"}):  "shard",
+    frozenset({"White", "Blue", "Red"}):    "wedge",
+    frozenset({"White", "Blue", "Green"}):  "shard",
+    frozenset({"White", "Black", "Red"}):   "wedge",
+    frozenset({"White", "Black", "Green"}): "wedge",
+    frozenset({"White", "Red", "Green"}):   "shard",
+    frozenset({"Blue", "Black", "Red"}):    "shard",
+    frozenset({"Blue", "Black", "Green"}):  "wedge",
+    frozenset({"Blue", "Red", "Green"}):    "wedge",
+    frozenset({"Black", "Red", "Green"}):   "shard",
 }
 
 
 @pytest.fixture(scope="module")
 def mtg_kc() -> KnowledgeComplex:
-    """Full MTG demo instance with all 10 faces (no pattern attributes asserted)."""
+    """Full MTG demo instance with all 10 faces (no structure attribute asserted)."""
     from demo.demo_instance import build_mtg_instance
     return build_mtg_instance()
 
@@ -95,46 +95,45 @@ def test_ten_faces_valid(mtg_kc):
 
 # --- REQ-DEMO-05, REQ-VV-05 ---
 
-def test_no_pattern_asserted(mtg_kc):
-    """REQ-DEMO-05: no face has a pattern attribute value in the raw instance.
+def test_no_structure_asserted(mtg_kc):
+    """REQ-DEMO-05: no face has a structure attribute value in the raw instance.
 
-    The OWL schema contains 'ooa'/'oaa' in the rdfs:comment annotation for
-    the pattern property definition, but no instance should have a pattern value.
+    The OWL schema contains 'shard'/'wedge' in the rdfs:comment annotation for
+    the structure property definition, but no instance should have a structure value.
     """
     ttl = mtg_kc.dump_graph()
-    # No face instance should have mtg:pattern "ooa" or "oaa" as a triple value.
-    # The schema annotation (rdfs:comment "Allowed values: ooa, oaa") is expected.
-    assert 'mtg:pattern "ooa"' not in ttl
-    assert 'mtg:pattern "oaa"' not in ttl
+    # No face instance should have mtg:structure "shard" or "wedge" as a triple value.
+    # The schema annotation (rdfs:comment "Allowed values: shard, wedge") is expected.
+    assert 'mtg:structure "shard"' not in ttl
+    assert 'mtg:structure "wedge"' not in ttl
 
 
-def test_pattern_discovery_ooa_oaa(mtg_kc):
-    """REQ-DEMO-05, REQ-VV-05: SPARQL correctly classifies all 10 faces into ooa/oaa."""
+def test_structure_discovery_shard_wedge(mtg_kc):
+    """REQ-DEMO-05, REQ-VV-05: SPARQL correctly classifies all 10 faces into shard/wedge."""
     df = mtg_kc.query("faces_by_edge_pattern")
-    # Derive pattern from the three disposition values
+    # Derive structure from the three disposition values
     def classify(row):
         dispositions = sorted([row["d1"], row["d2"], row["d3"]])
-        # ooa: adjacent, opposite, opposite
-        # oaa: adjacent, adjacent, opposite
+        # wedge: adjacent, opposite, opposite (2 opposite + 1 adjacent)
+        # shard: adjacent, adjacent, opposite (1 opposite + 2 adjacent)
         if dispositions.count("opposite") == 2:
-            return "ooa"
+            return "wedge"
         elif dispositions.count("opposite") == 1:
-            return "oaa"
+            return "shard"
         else:
             return "unknown"
-    df["discovered_pattern"] = df.apply(classify, axis=1)
-    assert set(df["discovered_pattern"]) == {"ooa", "oaa"}
-    assert "unknown" not in df["discovered_pattern"].values
-    # Verify counts (to be confirmed in WP4 against ground truth)
-    # assert len(df[df["discovered_pattern"] == "ooa"]) == ?
-    # assert len(df[df["discovered_pattern"] == "oaa"]) == ?
+    df["discovered_structure"] = df.apply(classify, axis=1)
+    assert set(df["discovered_structure"]) == {"shard", "wedge"}
+    assert "unknown" not in df["discovered_structure"].values
+    assert len(df[df["discovered_structure"] == "shard"]) == 5
+    assert len(df[df["discovered_structure"] == "wedge"]) == 5
 
 
 # --- REQ-DEMO-06, REQ-VV-03, REQ-VV-04 ---
 
-@pytest.mark.skip(reason="WP4: face construction not yet implemented")
+@pytest.mark.skip(reason="WP5: promote demonstration not yet implemented")
 def test_promote_causes_validation_fail(mtg_kc):
-    """REQ-DEMO-06: after promoting pattern to required, all 10 faces fail SHACL."""
+    """REQ-DEMO-06: after promoting structure to required, all 10 faces fail SHACL."""
     # promote_to_attribute modifies the schema in place;
     # use a fresh schema + instance for isolation
     sb = SchemaBuilder(namespace="mtg_promote")
@@ -142,19 +141,12 @@ def test_promote_causes_validation_fail(mtg_kc):
     sb.add_edge_type("ColorPair",
                      attributes={"disposition": vocab("adjacent", "opposite")})
     sb.add_face_type("ColorTriple",
-                     attributes={"pattern": {"vocab": vocab("ooa", "oaa"), "required": False}})
+                     attributes={"structure": {"vocab": vocab("shard", "wedge"), "required": False}})
 
-    # TODO: build the full MTG instance against sb, then promote
     sb.promote_to_attribute(
         type="ColorTriple",
-        attribute="pattern",
-        vocab=vocab("ooa", "oaa"),
+        attribute="structure",
+        vocab=vocab("shard", "wedge"),
         required=True,
     )
-    # Re-validate: all faces should now fail
-    # kc_new = KnowledgeComplex(schema=sb)
-    # ... add all vertices, edges, faces without pattern ...
-    # for face_id in face_ids:
-    #     with pytest.raises(ValidationError):
-    #         kc_new.add_face(face_id, ...)
-    pytest.skip("Full implementation pending WP4")
+    pytest.skip("Full implementation pending WP5")

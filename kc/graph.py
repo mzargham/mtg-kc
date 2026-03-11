@@ -204,7 +204,11 @@ class KnowledgeComplex:
 
         # Assert attributes (in model namespace)
         for attr_name, attr_value in attributes.items():
-            add(id_iri, self._ns[attr_name], Literal(attr_value))
+            if isinstance(attr_value, (list, tuple)):
+                for v in attr_value:
+                    add(id_iri, self._ns[attr_name], Literal(v))
+            else:
+                add(id_iri, self._ns[attr_name], Literal(attr_value))
 
         # Add to complex
         add(self._complex_iri, _KC.hasElement, id_iri)
