@@ -1,0 +1,19 @@
+# models/mtg/queries/edges_by_disposition.sparql
+# REQ-QUERY-03
+# Return all edge individuals grouped by disposition value.
+# Edges are unoriented; FILTER (?v1 < ?v2) deduplicates the boundary pair.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX mtg:  <https://example.org/mtg#>
+
+SELECT ?edge ?type ?v1 ?v2 ?disposition
+WHERE {
+    ?edge a ?type ;
+          kc:boundedBy ?v1 ;
+          kc:boundedBy ?v2 ;
+          mtg:disposition ?disposition .
+    ?type rdfs:subClassOf* kc:Edge .
+    FILTER (STR(?v1) < STR(?v2))
+}
+ORDER BY ?disposition ?edge
