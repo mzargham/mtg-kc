@@ -4,7 +4,7 @@
 
 ## Scope
 
-Complete the MTG color pentagon instance in `demo/demo_instance.py`:
+Complete the MTG color wheel instance in `demo/demo_instance.py`:
 
 - 5 `Color` vertices (White, Blue, Black, Red, Green)
 - 10 `ColorPair` edges (5 adjacent, 5 opposite)
@@ -14,7 +14,7 @@ Complete the MTG color pentagon instance in `demo/demo_instance.py`:
 
 ## Quality Criteria (human review)
 
-- [ ] Are the 10 triangles the correct ones for the complete graph on the MTG color pentagon?
+- [ ] Are the 10 triangles the correct ones for the complete graph on the MTG color wheel?
 - [ ] Do the edge dispositions (adjacent/opposite) match the canonical MTG color wheel relationships?
 - [ ] Does the shard/wedge classification revealed by SPARQL match your expectations from the reference article?
 - [ ] Is the pentagon oriented correctly per MTG convention (W-U-B-R-G)?

@@ -8,7 +8,7 @@ The Python package exists to hide this table from the user.
 |  | **OWL** | **SHACL** |
 |---|---|---|
 | **Topological** | `KC:Element` base class; `KC:Vertex`, `KC:Edge`, `KC:Face` as subclasses. `KC:Edge` has exactly 2 `boundedBy` (Vertex); `KC:Face` has exactly 3 `boundedBy` (Edge). `KC:Complex` as collection of elements via `KC:hasElement`. | Boundary vertices are distinct; boundary edges of a face form a closed triangle; boundary-closure of a complex (all instance-level; requires `sh:sparql`) |
-| **Ontological** | Concrete subclasses and their allowed attributes (`ColorPair` with `disposition`; `ColorTriple` with `pattern`); property domain/range declarations | Controlled vocabulary enforcement (e.g. `disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
+| **Ontological** | Concrete subclasses and their allowed attributes (`ColorPair` with `disposition`; `ColorTriple` with `structure`); property domain/range declarations | Controlled vocabulary enforcement (e.g. `disposition ∈ {adjacent, opposite}`); attribute presence rules; co-occurrence constraints |
 
 ### Why Both OWL and SHACL at Each Layer
 
@@ -122,7 +122,8 @@ tier above it.
 |---|---|---|---|---|
 | 1. Structural | Core topological classes and properties | `kc:Element`, `kc:Vertex`, `kc:boundedBy`, `kc:hasElement` | Core (static OWL) | Fixed in `kc_core.ttl`; never modified |
 | 2. Type | Domain-specific classes extending core types | `mtg:Color`, `mtg:ColorPair`, `mtg:ColorTriple` | Model (authored via SchemaBuilder) | `add_*_type()` generates OWL subclasses |
-| 3. Value | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"ooa"`, `"oaa"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
+| 3. Value (vocab) | Controlled attribute values within a type | `"adjacent"`, `"opposite"`, `"shard"`, `"wedge"`, `"azorius"`, `"design"` | Model (authored via `vocab()`) | `vocab()` generates SHACL `sh:in` |
+| 3. Value (text) | Free-text string attributes | `"persona"`, `"at_best"`, `"example_behaviors"` | Model (authored via `text()`) | `text()` generates SHACL `sh:datatype xsd:string` |
 
 A model family adds type terms (tier 2) that subclass structural terms (tier 1), and adds
 value terms (tier 3) that constrain attributes on those types. The core owns tier 1 and
@@ -154,11 +155,11 @@ Some constraints cannot be expressed in SHACL and are enforced by the Python API
 
 The MTG demo uses a single concrete edge type (`ColorPair`) with a controlled-vocabulary
 attribute (`disposition`) rather than two subclasses (`AllyEdge`, `EnemyEdge`). Similarly,
-`ColorTriple` uses an attribute (`pattern`) rather than two face subclasses.
+`ColorTriple` uses an attribute (`structure`) rather than two face subclasses.
 
 **Rationale:** The model is simple enough that attributes suffice. The framework still supports
 multiple concrete subclasses with different attribute schemas — the demo simply does not require
-that power. Keeping the demo flat makes the discovery step more legible: the `ooa`/`oaa` split
+that power. Keeping the demo flat makes the discovery step more legible: the `shard`/`wedge` split
 is visible in the data *before* it is promoted to a schema-level concern.
 
 **Implication:** The `Person` horizon example (WP5 step 6) motivates the subclass path — a

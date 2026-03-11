@@ -1,5 +1,5 @@
 """
-demo/demo.py — Marimo notebook: Knowledge Complex over MTG Color Pentagon
+demo/demo.py — Marimo notebook: Knowledge Complex over MTG Color Wheel
 
 Run:   marimo run demo/demo.py
 Edit:  marimo edit demo/demo.py
@@ -72,7 +72,7 @@ def cell_imports():
 @app.cell
 def cell_0_intro(mo):
     intro = mo.md("""
-# Knowledge Complex: The MTG Color Pentagon
+# Knowledge Complex: The MTG Color Wheel
 
 This notebook demonstrates the **knowledge complex** framework — a typed
 [simplicial complex](https://en.wikipedia.org/wiki/Simplicial_complex)
@@ -263,7 +263,7 @@ Adjacent colors on the pentagon share common ground; opposite colors are in tens
         ],
         loc="lower right", fontsize=11,
     )
-    _ax.set_title("MTG Color Pentagon — K5 with Disposition", fontsize=14)
+    _ax.set_title("MTG Color Wheel — K5 with Disposition", fontsize=14)
     _ax.axis("off")
     plt.tight_layout()
 

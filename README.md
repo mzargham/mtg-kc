@@ -33,7 +33,7 @@ models/
     __init__.py
 
 demo/                        # Layer 3: concrete instance + notebook
-  demo_instance.py           #   MTG color pentagon (5 colors, 10 edges, 10 faces)
+  demo_instance.py           #   MTG color wheel (5 colors, 10 edges, 10 faces)
   demo.py                    #   marimo notebook
 
 tests/
@@ -44,7 +44,8 @@ tests/
   test_mtg_demo.py
 
 docs/
-  PLAN.md                    # project plan with work packages and gates
+  PLAN.md                    # original project plan (historical)
+  ROADMAP.md                 # completed work summary and open issues
   ARCHITECTURE.md            # 2x2 responsibility map and design decisions
   REQUIREMENTS.md            # full requirements document
 
@@ -113,6 +114,7 @@ Magic: The Gathering is a trademark and © Wizards of the Coast, a subsidiary of
 
 ## See Also
 
-- `docs/PLAN.md` — work packages, sequence, review gates
+- `docs/ROADMAP.md` — completed work summary, open issues, and forward direction
+- `docs/PLAN.md` — original project plan (historical)
 - `docs/ARCHITECTURE.md` — the 2×2 responsibility map, design decisions, known OWL limits
 - `docs/REQUIREMENTS.md` — numbered requirements; all tests trace back to these

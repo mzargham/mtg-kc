@@ -101,3 +101,10 @@ Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`, no
 | 2026-03-10 | CI/CD workflow | Created `.github/workflows/deploy.yml` with pytest gate + HTML-WASM export + Pages deploy. Branch `wp6-ci-deploy`. |
 | 2026-03-10 | GitHub Pages source | User set Pages source to "GitHub Actions" in repo settings. Confirmed via `gh api`. |
 | 2026-03-10 | Expand WP6 scope to include repo finalization | Added Section B (doc reconciliation) and Section C (stale reference cleanup). PLAN.md → ROADMAP.md. ARCHITECTURE.md, REQUIREMENTS.md, README.md updates queued. |
+| 2026-03-10 | Human review gate for deployment | Added `_review/approved.sha` check to `deploy.yml`. Created top-level `CLAUDE.md`. Updated `README.md` with deployment section. |
+| 2026-03-10 | Terminology: color pentagon → color wheel | Replaced across README, demo, tests, docs, worklog. Created `docs/issues/terminology-audit.md`. |
+| 2026-03-10 | Terminology: ooa/oaa → shard/wedge | PLAN.md, REQUIREMENTS.md, ARCHITECTURE.md, SPARQL query comment, test comments, graph.py docstring. Test fixtures unchanged. |
+| 2026-03-10 | Doc freshness: ARCHITECTURE.md | Fixed DD1 (`pattern` → `structure`), 2×2 table, vocabulary tier examples. |
+| 2026-03-10 | Doc freshness: REQUIREMENTS.md | Updated REQ-DEMO-05/06, REQ-QUERY-01, REQ-VV-05 terminology. Cross-ref header updated to ROADMAP.md. |
+| 2026-03-10 | Doc freshness: README.md | Updated repo layout to include ROADMAP.md, "See Also" section updated. |
+| 2026-03-10 | PLAN.md → ROADMAP.md | Created `docs/ROADMAP.md` (completed work summary, open issues, hypothesis criteria, terminology). Added historical note to PLAN.md header. Created `worklog/README.md` (plan vs. actuals). |
