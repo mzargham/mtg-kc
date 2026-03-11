@@ -108,3 +108,4 @@ Expected: workflow green, pages live at `https://mzargham.github.io/mtg-kc/`, no
 | 2026-03-10 | Doc freshness: ARCHITECTURE.md | Added DD6 (shared-domain), DD7 (text vs vocab), updated Vocabulary Tiers, fixed DD1 and 2×2 table. |
 | 2026-03-10 | Doc freshness: REQUIREMENTS.md | Added REQ-SCHEMA-10/11/12, REQ-GRAPH-10/11. Updated REQ-DEMO-05/06. |
 | 2026-03-10 | Doc freshness: README.md | Updated usage sketch with enriched schema (text/vocab attributes). |
+| 2026-03-10 | PLAN.md → ROADMAP.md | Created `docs/ROADMAP.md` (completed work summary, open issues, hypothesis criteria, terminology). Added historical note to PLAN.md header. Created `worklog/README.md` (plan vs. actuals). |

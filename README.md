@@ -44,7 +44,8 @@ tests/
   test_mtg_demo.py
 
 docs/
-  PLAN.md                    # project plan with work packages and gates
+  PLAN.md                    # original project plan (historical)
+  ROADMAP.md                 # completed work summary and open issues
   ARCHITECTURE.md            # 2x2 responsibility map and design decisions
   REQUIREMENTS.md            # full requirements document
 
@@ -144,8 +145,11 @@ This project uses the five Magic: The Gathering colors as its test case. The phi
 
 The local copy is maintained for convenient reference. All credit for the color wheel analysis belongs to the original author.
 
+Magic: The Gathering is a trademark and © Wizards of the Coast, a subsidiary of Hasbro, Inc. This project is not affiliated with, endorsed by, or sponsored by Wizards of the Coast. MTG content is used here for educational and analytical purposes only.
+
 ## See Also
 
-- `docs/PLAN.md` — work packages, sequence, review gates
+- `docs/ROADMAP.md` — completed work summary, open issues, and forward direction
+- `docs/PLAN.md` — original project plan (historical)
 - `docs/ARCHITECTURE.md` — the 2×2 responsibility map, design decisions, known OWL limits
 - `docs/REQUIREMENTS.md` — numbered requirements; all tests trace back to these

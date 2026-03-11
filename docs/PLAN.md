@@ -1,5 +1,7 @@
 # Project Plan: Knowledge Complex via Semantic Web Toolchain
 
+> **Note:** This is the original project plan, preserved for historical reference. For current status and forward direction, see [ROADMAP.md](ROADMAP.md).
+
 ## Hypothesis
 
 The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is sufficient to implement the three-layer knowledge complex framework. The Python package abstraction is itself a hypothesis: that the 2×2 complexity {topological, ontological} × {OWL, SHACL} can be hidden behind a DSL that feels like dataclass-style modeling.

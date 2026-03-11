@@ -1,7 +1,7 @@
 # Requirements
 
 All tests trace to a requirement ID in this document. Requirements are organized by component.
-The hypothesis test criteria from PLAN.md (H1–H6) are cross-referenced where applicable.
+The hypothesis test criteria (H1–H6, defined in PLAN.md and preserved in ROADMAP.md) are cross-referenced where applicable.
 
 ---
 
