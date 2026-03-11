@@ -35,39 +35,27 @@ _OPPOSITE_PAIRS = {
 
 # Ground-truth face classification (sorted color triple → pattern)
 # ooa = two opposite edges + one adjacent; oaa = one opposite + two adjacent
-# Computed by hand from MTG color wheel topology.
+# Computed from MTG color wheel: adjacent = pentagon edges, opposite = diagonals.
+# 5 ooa + 5 oaa = 10 total.
 _FACE_PATTERNS: dict[frozenset, str] = {
-    # TODO (WP4): fill in during demo instance authoring
-    # e.g. frozenset({"White", "Blue", "Black"}): "ooa",
+    frozenset({"White", "Blue", "Black"}):  "oaa",
+    frozenset({"White", "Blue", "Red"}):    "ooa",
+    frozenset({"White", "Blue", "Green"}):  "oaa",
+    frozenset({"White", "Black", "Red"}):   "ooa",
+    frozenset({"White", "Black", "Green"}): "ooa",
+    frozenset({"White", "Red", "Green"}):   "oaa",
+    frozenset({"Blue", "Black", "Red"}):    "oaa",
+    frozenset({"Blue", "Black", "Green"}):  "ooa",
+    frozenset({"Blue", "Red", "Green"}):    "ooa",
+    frozenset({"Black", "Red", "Green"}):   "oaa",
 }
 
 
 @pytest.fixture(scope="module")
 def mtg_kc() -> KnowledgeComplex:
-    """Full MTG demo instance (no pattern attributes asserted)."""
-    sb = build_mtg_schema()
-    kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])
-
-    colors = ["White", "Blue", "Black", "Red", "Green"]
-    for c in colors:
-        kc.add_vertex(c, type="Color")
-
-    edge_id = 0
-    for pair in _ADJACENT_PAIRS:
-        kc.add_edge(f"e{edge_id}", type="ColorPair",
-                    vertices=pair, disposition="adjacent")
-        edge_id += 1
-
-    for pair in _OPPOSITE_PAIRS:
-        kc.add_edge(f"e{edge_id}", type="ColorPair",
-                    vertices=pair, disposition="opposite")
-        edge_id += 1
-
-    # TODO (WP4): enumerate all 10 valid triangles and add_face for each
-    # For now, a placeholder to make fixture construction non-blocking
-    # kc.add_face("f0", type="ColorTriple", boundary=[...])
-
-    return kc
+    """Full MTG demo instance with all 10 faces (no pattern attributes asserted)."""
+    from demo.demo_instance import build_mtg_instance
+    return build_mtg_instance()
 
 
 # --- REQ-DEMO-01 ---
@@ -95,24 +83,31 @@ def test_five_opposite_edges(mtg_kc):
 
 # --- REQ-DEMO-04 ---
 
-@pytest.mark.skip(reason="WP4: face construction not yet implemented")
 def test_ten_faces_valid(mtg_kc):
-    """REQ-DEMO-04: exactly 10 ColorTriple faces, all structurally valid."""
+    """REQ-DEMO-04: exactly 10 ColorTriple faces, all structurally valid.
+
+    MTG explicitly enumerates all C(5,3)=10 triangles in K5.
+    This is an MTG model assertion, not a framework invariant.
+    """
     df = mtg_kc.query("faces_by_edge_pattern")
     assert len(df) == 10
 
 
 # --- REQ-DEMO-05, REQ-VV-05 ---
 
-@pytest.mark.skip(reason="WP4: face construction not yet implemented")
 def test_no_pattern_asserted(mtg_kc):
-    """REQ-DEMO-05: no face has a pattern attribute in the raw instance."""
+    """REQ-DEMO-05: no face has a pattern attribute value in the raw instance.
+
+    The OWL schema contains 'ooa'/'oaa' in the rdfs:comment annotation for
+    the pattern property definition, but no instance should have a pattern value.
+    """
     ttl = mtg_kc.dump_graph()
-    assert "ooa" not in ttl
-    assert "oaa" not in ttl
+    # No face instance should have mtg:pattern "ooa" or "oaa" as a triple value.
+    # The schema annotation (rdfs:comment "Allowed values: ooa, oaa") is expected.
+    assert 'mtg:pattern "ooa"' not in ttl
+    assert 'mtg:pattern "oaa"' not in ttl
 
 
-@pytest.mark.skip(reason="WP4: face construction not yet implemented")
 def test_pattern_discovery_ooa_oaa(mtg_kc):
     """REQ-DEMO-05, REQ-VV-05: SPARQL correctly classifies all 10 faces into ooa/oaa."""
     df = mtg_kc.query("faces_by_edge_pattern")

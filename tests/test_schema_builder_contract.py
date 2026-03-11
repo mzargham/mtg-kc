@@ -159,12 +159,15 @@ def test_promote_on_unregistered_type_raises():
         sb.promote_to_attribute("NonExistent", "attr", vocab("a"), required=True)
 
 
-def test_promote_on_vertex_type_raises():
-    """Vertices don't have attributes — promoting on a vertex type should raise SchemaError."""
+def test_promote_on_vertex_type_succeeds():
+    """Vertex attributes are valid (e.g. Color.hex_code) — promote should work on vertex types."""
     sb = SchemaBuilder(namespace="promo")
     sb.add_vertex_type("V")
-    with pytest.raises(SchemaError):
-        sb.promote_to_attribute("V", "attr", vocab("a"), required=True)
+    result = sb.promote_to_attribute("V", "attr", vocab("a", "b"), required=True)
+    assert result is sb
+    # Verify the attribute appears in both dumps
+    assert "attr" in sb.dump_owl()
+    assert "attr" in sb.dump_shacl()
 
 
 # ---------------------------------------------------------------------------

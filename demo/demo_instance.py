@@ -53,21 +53,24 @@ def build_mtg_instance(schema: SchemaBuilder | None = None) -> KnowledgeComplex:
         kc.add_edge(eid, type="ColorPair",
                     vertices={v1, v2}, disposition="opposite")
 
-    # REQ-DEMO-04: 10 valid ColorTriple faces
-    # Each face is a valid closed triangle in the 10-edge graph.
-    # No pattern attribute asserted (REQ-DEMO-05).
-    # TODO (WP4): enumerate all 10 triangles and uncomment.
-    # The 10 triangles are the C(5,3)=10 color triples for which all 3 pairs
-    # have edges (they all do, since the graph is K5). List them explicitly:
-    #
-    # faces = [
-    #     ("WUB", ["WU", "UB", "WB"]),  # White-Blue-Black
-    #     ("WUR", ["WU", "UR", "WR"]),  # White-Blue-Red
-    #     ("WUG", ["WU", "UG", "GW"]),  # White-Blue-Green  (GW reversed → need directed check)
-    #     ...
-    # ]
-    # for fid, edges in faces:
-    #     kc.add_face(fid, type="ColorTriple", boundary=edges)
+    # REQ-DEMO-04: 10 valid ColorTriple faces (C(5,3)=10 triangles in K5).
+    # No pattern attribute asserted (REQ-DEMO-05) — pattern is discovered via SPARQL.
+    # NOTE: MTG explicitly enumerates all faces. This is a model-level choice,
+    # not a framework invariant. See deferred issue in models/mtg/schema.py.
+    faces = [
+        ("WUB", ["WU", "UB", "WB"]),   # White-Blue-Black
+        ("WUR", ["WU", "UR", "WR"]),   # White-Blue-Red
+        ("WUG", ["WU", "UG", "GW"]),   # White-Blue-Green
+        ("WBR", ["WB", "BR", "WR"]),   # White-Black-Red
+        ("WBG", ["WB", "BG", "GW"]),   # White-Black-Green
+        ("WRG", ["WR", "RG", "GW"]),   # White-Red-Green
+        ("UBR", ["UB", "BR", "UR"]),   # Blue-Black-Red
+        ("UBG", ["UB", "BG", "UG"]),   # Blue-Black-Green
+        ("URG", ["UR", "RG", "UG"]),   # Blue-Red-Green
+        ("BRG", ["BR", "RG", "BG"]),   # Black-Red-Green
+    ]
+    for fid, edges in faces:
+        kc.add_face(fid, type="ColorTriple", boundary=edges)
 
     return kc
 

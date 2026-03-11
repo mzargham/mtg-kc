@@ -177,6 +177,9 @@ class SchemaBuilder:
         -------
         SchemaBuilder (self, for chaining)
         """
+        from kc.exceptions import SchemaError
+        if name in self._types:
+            raise SchemaError(f"Type '{name}' is already registered")
         self._types[name] = {"kind": "vertex"}
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
@@ -213,6 +216,9 @@ class SchemaBuilder:
         -------
         SchemaBuilder (self, for chaining)
         """
+        from kc.exceptions import SchemaError
+        if name in self._types:
+            raise SchemaError(f"Type '{name}' is already registered")
         attributes = attributes or {}
         self._types[name] = {"kind": "edge", "attributes": dict(attributes)}
         type_iri = self._ns[name]
@@ -263,6 +269,9 @@ class SchemaBuilder:
         -------
         SchemaBuilder (self, for chaining)
         """
+        from kc.exceptions import SchemaError
+        if name in self._types:
+            raise SchemaError(f"Type '{name}' is already registered")
         attributes = attributes or {}
         self._types[name] = {"kind": "face", "attributes": dict(attributes)}
         type_iri = self._ns[name]

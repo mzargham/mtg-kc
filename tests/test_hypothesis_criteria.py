@@ -190,9 +190,12 @@ def test_h4_verification_catches_malformed_face():
 # ═══════════════════════════════════════════════════════════════════════════
 
 def test_h5_discovery_without_pre_assertion():
-    """H5: faces_by_edge_pattern query classifies faces without pattern attributes."""
-    from kc.graph import KnowledgeComplex
-    from models.mtg import build_mtg_schema, QUERIES_DIR
+    """H5: SPARQL classifies MTG's 10 explicitly-enumerated faces by edge disposition.
+
+    MTG asserts all 10 ColorTriple faces (K5 has C(5,3)=10 triangles).
+    This is an MTG model assertion — the framework does not require all
+    closed boundaries to have faces. See deferred issue in models/mtg/schema.py.
+    """
     from demo.demo_instance import build_mtg_instance
 
     kc = build_mtg_instance()
