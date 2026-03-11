@@ -36,7 +36,7 @@ demo/                        # Layer 3: concrete instance + published notebook
   demo_instance.py           #   build_mtg_instance() — 5 colors, 10 edges, 10 faces
   demo.py                    #   marimo notebook (published to GitHub Pages)
 
-tests/                       # pytest suite (203 passed, 5 skipped)
+tests/                       # pytest suite (208 passed)
   qc_io.py                   #   marimo QC notebook for import/export verification
 
 docs/
@@ -84,7 +84,7 @@ Tests reference requirement identifiers in docstrings (e.g., `REQ-DEMO-01`, `REQ
 uv run pytest tests/ -v
 ```
 
-Expected: 203 passed, 5 skipped. All skipped tests are marked with reasons (pending future WPs).
+Expected: 208 passed, 0 skipped.
 
 ## Running the Notebook
 

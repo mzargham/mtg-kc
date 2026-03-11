@@ -133,11 +133,16 @@ def test_structure_discovery_shard_wedge(mtg_kc):
 
 def test_promote_causes_validation_fail():
     """REQ-DEMO-06, REQ-VV-03: after promoting structure to required, all 10 faces fail SHACL."""
-    from models.mtg import build_mtg_schema, QUERIES_DIR
-    from demo.demo_instance import build_mtg_instance
+    from models.mtg import QUERIES_DIR
 
-    # Build a fresh schema and promote structure to required
-    sb = build_mtg_schema()
+    # Build a minimal schema (without enriched text attributes) and promote structure
+    sb = SchemaBuilder(namespace="mtg")
+    sb.add_vertex_type("Color")
+    sb.add_edge_type("ColorPair",
+                     attributes={"disposition": vocab("adjacent", "opposite")})
+    sb.add_face_type("ColorTriple",
+                     attributes={"structure": {"vocab": vocab("shard", "wedge"), "required": False}})
+
     sb.promote_to_attribute(
         type="ColorTriple",
         attribute="structure",

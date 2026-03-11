@@ -48,7 +48,7 @@ uv run python -c "import importlib.util; spec = importlib.util.spec_from_file_lo
 grep -E "^(from|import) (rdflib|pyshacl|owlrl)" demo/demo.py
 # Expected: no matches
 
-# All tests pass (203 passed, 5 skipped)
+# All tests pass (208 passed, 0 skipped)
 uv run pytest tests/ -v
 ```
 
@@ -59,3 +59,5 @@ uv run pytest tests/ -v
 | 2026-03-10 | Implement WP5 notebook | Complete rewrite of demo/demo.py — 9 cells with progressive reveal, persona cards, pentagon viz, discovery with compare-and-contrast, dual horizon. H1-H6 covered. 203 tests pass, 5 skip. |
 | 2026-03-10 | Delete session prompt | Removed `worklog/wp5-session-prompt.md` (wrong format, content absorbed into plan). |
 | 2026-03-10 | Fix H6 test false positive | Rephrased docstring to avoid regex match on "from rdflib" in comment text. |
+| 2026-03-11 | Notebook not rendering cells 1–6 | Fixed three marimo patterns: (1) display elements must be bare statements, not returned in tuples; (2) `mo.callout()` has no `title` param in this version; (3) `mo.ui.tabs()` replaces deprecated `mo.tabs()`; (4) `_`-prefixed variables are cell-private, not exported (`_np` → `np`). |
+| 2026-03-11 | Add runtime warning | Added load-time warning in intro cell + `mo.status.spinner()` around instance build (~30-60s SHACL validation). |

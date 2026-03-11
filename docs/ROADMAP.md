@@ -10,7 +10,7 @@ The `kc` package demonstrates that the semantic web toolchain (OWL + SHACL + SPA
 
 **MTG demonstrator:** 5 colors, 10 edges (adjacent/opposite), 10 faces. The `shard`/`wedge` classification is discovered via SPARQL query, then promoted to a required attribute — demonstrating the verification→discovery→schema-evolution loop.
 
-**All six hypothesis criteria passed** (203 tests, 5 skipped). See [worklog/README.md](../worklog/README.md) for the plan-vs-actuals comparison.
+**All six hypothesis criteria passed** (208 tests, 0 skipped). See [worklog/README.md](../worklog/README.md) for the plan-vs-actuals comparison.
 
 ---
 

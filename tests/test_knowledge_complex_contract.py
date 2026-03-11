@@ -1,10 +1,10 @@
 """
 tests/test_knowledge_complex_contract.py
 
-Tests for KnowledgeComplex API contract beyond existing tests.
-Some tests pass today (pre-stub ValueError checks), most fail with NotImplementedError.
+Tests for KnowledgeComplex API contract: boundary-count validation,
+duplicate handling, shared edges, interleaved construction order.
 
-Traceability: see tests/requirements.md
+Traceability: REQ-CORE-02, REQ-CORE-03, REQ-GRAPH-02/03/04.
 """
 
 import pytest
@@ -31,7 +31,7 @@ def _make_schema() -> SchemaBuilder:
 
 
 # ---------------------------------------------------------------------------
-# Pre-stub guards (pass today — ValueError checks before NotImplementedError)
+# Boundary-count validation (REQ-CORE-02, REQ-CORE-03)
 # ---------------------------------------------------------------------------
 
 def test_add_edge_one_vertex_raises_value_error():
@@ -79,7 +79,7 @@ def test_add_face_four_edges_raises_value_error():
 
 
 # ---------------------------------------------------------------------------
-# API behavior (fail with NotImplementedError — WP3 implementation checklist)
+# API behavior (REQ-GRAPH-02/08)
 # ---------------------------------------------------------------------------
 
 def test_duplicate_vertex_id_behavior():

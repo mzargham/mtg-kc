@@ -28,7 +28,7 @@ Three work packages were not in the original plan but emerged during development
 
 ## Hypothesis Test Results
 
-All six criteria from `docs/ROADMAP.md` are covered by tests (203 passed, 5 skipped):
+All six criteria from `docs/ROADMAP.md` are covered by tests (208 passed, 0 skipped):
 
 | ID | Criterion | Result | Key Evidence |
 |----|-----------|--------|-------------|
