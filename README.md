@@ -132,8 +132,7 @@ git commit -m "approve HTML export for $(git rev-parse --short HEAD)"
 git push
 ```
 
-CI verifies that the SHA in `_review/approved.sha` matches the current `HEAD`.
-If new commits are pushed after the review, the build fails and asks for re-review.
+CI verifies that the SHA in `_review/approved.sha` matches the current `HEAD`, or that the only changes since the approved SHA are in `_review/` itself (the approval commit). If content files change after the review, the build fails and asks for re-review.
 
 ## References & Acknowledgements
 

@@ -125,11 +125,11 @@ The notebook is published to GitHub Pages via GitHub Actions (`.github/workflows
    git push
    ```
 
-CI checks that the SHA in `_review/approved.sha` matches the current `HEAD`. If they don't match (e.g., new commits were pushed after the review), the build fails with a clear error message asking for re-review.
+CI checks that the SHA in `_review/approved.sha` matches the current `HEAD`, or that the only changes since the approved SHA are in the `_review/` directory itself (i.e., the approval commit). This avoids the self-reference problem where committing the SHA file changes HEAD.
 
 ### When the review gate blocks
 
-If CI fails with "Review approval is for X but HEAD is Y", it means commits were pushed after the last review. The fix is:
+If CI fails with "Content files changed since approval", it means code or docs were modified after the last review. The fix is:
 
 1. Re-export the notebook locally
 2. Review the new export

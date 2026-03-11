@@ -43,12 +43,27 @@ jobs:
           fi
           APPROVED=$(cat _review/approved.sha | tr -d '[:space:]')
           CURRENT=$(git rev-parse HEAD)
-          if [ "$APPROVED" != "$CURRENT" ]; then
-            echo "::error::Review approval is for $APPROVED but HEAD is $CURRENT."
+          if [ "$APPROVED" = "$CURRENT" ]; then
+            echo "Review approval matches HEAD exactly ($CURRENT)"
+            exit 0
+          fi
+          # Allow the approval commit itself: if the only changes between
+          # the approved SHA and HEAD are in _review/, the content is unchanged.
+          CHANGED=$(git diff --name-only "$APPROVED" "$CURRENT" -- . ':!_review/' 2>/dev/null || echo "DIFF_FAILED")
+          if [ "$CHANGED" = "DIFF_FAILED" ]; then
+            echo "::error::Review approval SHA $APPROVED is not a valid commit in this history."
             echo "::error::Re-export the notebook, review locally, and update _review/approved.sha."
             exit 1
           fi
-          echo "Review approval confirmed for $CURRENT"
+          if [ -z "$CHANGED" ]; then
+            echo "Review approval is for $APPROVED; only _review/ files changed since then. OK."
+            exit 0
+          fi
+          echo "::error::Review approval is for $APPROVED but HEAD is $CURRENT."
+          echo "::error::Content files changed since approval:"
+          echo "$CHANGED" | sed 's/^/::error::  /'
+          echo "::error::Re-export the notebook, review locally, and update _review/approved.sha."
+          exit 1
 
       - name: Export notebook
         run: |
