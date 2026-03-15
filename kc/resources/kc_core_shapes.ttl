@@ -136,9 +136,11 @@ kcs:FaceShape
                 }
             }
         """
-        # NOTE: The SPARQL above is a starting-point sketch. WP2 implementation must
-        # verify this logic exhaustively against the 10 MTG triangles and at least
-        # 2 deliberately broken non-triangle cases. Refine as needed during WP2.
+        # VERIFIED: Constraint correctness relies on SPARQL exploring all permutations
+        # of e1/e2/e3. Every edge takes a turn as e1, so any unshared endpoint is caught.
+        # Tested against: 10 valid MTG triangles (test_mtg_demo), open-triangle with
+        # 4th vertex (test_open_triangle_face_fails), fan pattern sharing hub vertex
+        # (test_fan_triangle_face_fails).
     ] .
 
 # ---------------------------------------------------------------------------
