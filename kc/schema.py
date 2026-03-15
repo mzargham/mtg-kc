@@ -44,12 +44,14 @@ class VocabDescriptor:
     when passed to add_*_type().
     """
     values: tuple[str, ...]
+    multiple: bool = False
 
     def __repr__(self) -> str:
-        return f"vocab({', '.join(repr(v) for v in self.values)})"
+        suffix = ", multiple=True" if self.multiple else ""
+        return f"vocab({', '.join(repr(v) for v in self.values)}{suffix})"
 
 
-def vocab(*values: str) -> VocabDescriptor:
+def vocab(*values: str, multiple: bool = False) -> VocabDescriptor:
     """
     Declare a controlled vocabulary for an attribute.
 
@@ -57,6 +59,9 @@ def vocab(*values: str) -> VocabDescriptor:
     ----------
     *values : str
         The allowed string values.
+    multiple : bool
+        If True, allows multiple values (no sh:maxCount).
+        If False (default), generates sh:maxCount 1.
 
     Returns
     -------
@@ -66,10 +71,12 @@ def vocab(*values: str) -> VocabDescriptor:
     -------
     >>> vocab("adjacent", "opposite")
     vocab('adjacent', 'opposite')
+    >>> vocab("a", "b", "c", multiple=True)
+    vocab('a', 'b', 'c', multiple=True)
     """
     if not values:
         raise ValueError("vocab() requires at least one value")
-    return VocabDescriptor(values=tuple(values))
+    return VocabDescriptor(values=tuple(values), multiple=multiple)
 
 
 @dataclass(frozen=True)
@@ -220,7 +227,8 @@ class SchemaBuilder:
         self._shacl_graph.add((prop_shape, _SH.path, attr_iri))
         self._shacl_graph.add((prop_shape, _SH.datatype, XSD.string))
         self._shacl_graph.add((prop_shape, _SH.minCount, Literal(1 if required else 0)))
-        self._shacl_graph.add((prop_shape, _SH.maxCount, Literal(1)))
+        if not vocab_desc.multiple:
+            self._shacl_graph.add((prop_shape, _SH.maxCount, Literal(1)))
 
         # sh:in list
         list_node = BNode()
@@ -505,6 +513,44 @@ class SchemaBuilder:
         else:
             self._types[type]["attributes"][attribute] = text
 
+        return self
+
+    def add_sparql_constraint(
+        self,
+        type_name: str,
+        sparql: str,
+        message: str,
+    ) -> "SchemaBuilder":
+        """
+        Attach a sh:sparql constraint to the SHACL shape for type_name.
+
+        The sparql argument must be a SPARQL SELECT query that returns $this
+        for each violating focus node. pyshacl evaluates this and reports the
+        message for each returned row. Mirrors the pattern used in
+        kc_core_shapes.ttl for topological constraints (H2).
+
+        Parameters
+        ----------
+        type_name : str
+            The type name (must have been registered via add_*_type).
+        sparql : str
+            SPARQL SELECT query. Must bind $this to each violating node.
+        message : str
+            Human-readable message reported when the constraint is violated.
+
+        Returns
+        -------
+        SchemaBuilder (self, for chaining)
+        """
+        from kc.exceptions import SchemaError
+        if type_name not in self._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        shape_iri = self._nss[f"{type_name}Shape"]
+        constraint = BNode()
+        self._shacl_graph.add((shape_iri, _SH.sparql, constraint))
+        self._shacl_graph.add((constraint, RDF.type, _SH.SPARQLConstraint))
+        self._shacl_graph.add((constraint, _SH.select, Literal(sparql)))
+        self._shacl_graph.add((constraint, _SH.message, Literal(message)))
         return self
 
     def dump_owl(self) -> str:
