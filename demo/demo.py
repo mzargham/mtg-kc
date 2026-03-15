@@ -138,6 +138,13 @@ alone.
 def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
     sb = SchemaBuilder(namespace="mtg")
 
+    _THEMES = (
+        "design", "growth_mindset", "independence", "authenticity", "community",
+        "tribalism", "heroism", "truth_seeking", "creativity", "profanity",
+    )
+    _KC = "https://example.org/kc#"
+    _MTG = "https://example.org/mtg#"
+
     sb.add_vertex_type("Color", attributes={
         "goal": vocab("peace", "perfection", "satisfaction", "freedom", "harmony"),
         "method": vocab("order", "knowledge", "ruthlessness", "action", "acceptance"),
@@ -155,10 +162,9 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
             "azorius", "dimir", "rakdos", "gruul", "selesnya",
             "orzhov", "boros", "simic", "izzet", "golgari",
         ),
-        "theme": vocab(
-            "design", "growth_mindset", "independence", "authenticity", "community",
-            "tribalism", "heroism", "truth_seeking", "creativity", "profanity",
-        ),
+        "theme": vocab(*_THEMES),
+        "synergies": text(),
+        "tensions": text(),
         "persona": text(),
         "at_best": text(),
         "at_worst": text(),
@@ -174,6 +180,8 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
         ),
         # structure is optional — to be discovered, not pre-asserted (REQ-DEMO-05)
         "structure": {"vocab": vocab("shard", "wedge"), "required": False},
+        "thematic_triad": vocab(*_THEMES, multiple=True),
+        "closure": text(),
         "persona": text(),
         "at_best": text(),
         "at_worst": text(),
@@ -181,6 +189,38 @@ def cell_1_schema(mo, SchemaBuilder, vocab, text, build_mtg_instance):
         "playstyle": text(required=False),
         "example_decks": text(multiple=True, required=False),
     })
+
+    # thematic_triad must equal exactly the themes of the bounding edges
+    sb.add_sparql_constraint(
+        "ColorTriple",
+        f"""
+    PREFIX kc: <{_KC}>
+    PREFIX mtg: <{_MTG}>
+    SELECT $this WHERE {{
+        $this kc:boundedBy ?edge .
+        ?edge mtg:theme ?edgeTheme .
+        FILTER NOT EXISTS {{
+            $this mtg:thematic_triad ?edgeTheme .
+        }}
+    }}
+""",
+        "thematic_triad is missing at least one theme from a bounding edge.",
+    )
+    sb.add_sparql_constraint(
+        "ColorTriple",
+        f"""
+    PREFIX kc: <{_KC}>
+    PREFIX mtg: <{_MTG}>
+    SELECT $this WHERE {{
+        $this mtg:thematic_triad ?triadTheme .
+        FILTER NOT EXISTS {{
+            $this kc:boundedBy ?edge .
+            ?edge mtg:theme ?triadTheme .
+        }}
+    }}
+""",
+        "thematic_triad contains a value that is not a theme of any bounding edge.",
+    )
 
     # Build the full instance (25 elements — takes ~30s for SHACL verification)
     with mo.status.spinner(title="Building knowledge complex",
@@ -334,6 +374,8 @@ def cell_3_pairs(mo, kc, extract_attr):
         _guild = _guild_map[_pid]
         _theme = _theme_map[_pid]
         _persona = (extract_attr(_graph_ttl, _pid, "persona") or [""])[0]
+        _synergies = (extract_attr(_graph_ttl, _pid, "synergies") or [""])[0]
+        _tensions = (extract_attr(_graph_ttl, _pid, "tensions") or [""])[0]
         _at_best = (extract_attr(_graph_ttl, _pid, "at_best") or [""])[0]
         _at_worst = (extract_attr(_graph_ttl, _pid, "at_worst") or [""])[0]
         _behaviors = extract_attr(_graph_ttl, _pid, "example_behaviors")
@@ -344,6 +386,10 @@ def cell_3_pairs(mo, kc, extract_attr):
 **Theme:** {_theme}
 
 > *{_persona}*
+
+**Synergies:** {_synergies}
+
+**Tensions:** {_tensions}
 
 **At best:** {_at_best}
 
@@ -489,6 +535,9 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
 
     def _make_triple_card(_fid, _clan):
         _persona = (extract_attr(_graph_ttl, _fid, "persona") or [""])[0]
+        _triad = extract_attr(_graph_ttl, _fid, "thematic_triad")
+        _triad_str = " · ".join(_triad) if _triad else ""
+        _closure = (extract_attr(_graph_ttl, _fid, "closure") or [""])[0]
         _at_best = (extract_attr(_graph_ttl, _fid, "at_best") or [""])[0]
         _at_worst = (extract_attr(_graph_ttl, _fid, "at_worst") or [""])[0]
         _behaviors = extract_attr(_graph_ttl, _fid, "example_behaviors")
@@ -496,7 +545,11 @@ def cell_5_discovery(mo, pd, kc, extract_attr):
         return mo.callout(
             mo.md(f"""### {_fid} — {_clan.capitalize()}
 
+**Thematic triad:** {_triad_str}
+
 > *{_persona}*
+
+**Closure:** {_closure}
 
 **At best:** {_at_best}
 
