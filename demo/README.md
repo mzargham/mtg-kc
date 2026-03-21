@@ -39,7 +39,7 @@ print(df)
 Skip Python model construction entirely — load the pre-built Turtle files:
 
 ```python
-from kc.graph import KnowledgeComplex
+from knowledgecomplex import KnowledgeComplex
 
 kc = KnowledgeComplex.load("demo/src")
 df = kc.query("faces_by_edge_pattern")

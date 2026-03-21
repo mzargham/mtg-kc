@@ -10,9 +10,7 @@ def imports():
     import tempfile
     from pathlib import Path
 
-    from kc.schema import SchemaBuilder
-    from kc.graph import KnowledgeComplex
-    from kc.exceptions import ValidationError
+    from knowledgecomplex import SchemaBuilder, KnowledgeComplex, ValidationError
     from models.mtg import build_mtg_schema, QUERIES_DIR
     from demo.demo_instance import build_mtg_instance
     return (

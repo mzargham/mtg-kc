@@ -1,8 +1,8 @@
 """
 tests/test_abstraction_boundary.py
 
-Tests enforcing the abstraction boundary between core framework and model/demo layers.
-Source-inspection tests — verify import hygiene and API surface.
+Tests enforcing the abstraction boundary between the knowledgecomplex framework
+and model/demo layers. Source-inspection tests — verify import hygiene and API surface.
 All tests should pass today.
 
 Traceability: see tests/requirements.md, ARCHITECTURE.md §Abstraction Boundary
@@ -77,32 +77,33 @@ def test_demo_notebook_does_not_import_rdflib():
 # Public API surface
 # ---------------------------------------------------------------------------
 
-def test_kc_all_exports():
-    """kc.__all__ should be exactly the 7 public names."""
-    import kc
-    expected = {"SchemaBuilder", "vocab", "text", "TextDescriptor", "KnowledgeComplex", "ValidationError", "UnknownQueryError"}
-    assert set(kc.__all__) == expected
+def test_knowledgecomplex_exports():
+    """knowledgecomplex should export the core public names."""
+    import knowledgecomplex
+    for name in ["SchemaBuilder", "vocab", "text", "TextDescriptor",
+                 "KnowledgeComplex", "ValidationError", "UnknownQueryError"]:
+        assert hasattr(knowledgecomplex, name), f"knowledgecomplex missing export: {name}"
 
 
-def test_kc_exports_are_not_rdflib_types():
-    """None of the names in kc.__all__ should be rdflib types."""
-    import kc
+def test_knowledgecomplex_exports_are_not_rdflib_types():
+    """Core knowledgecomplex exports should not be rdflib types."""
+    import knowledgecomplex
     import rdflib
     rdflib_types = {getattr(rdflib, name) for name in dir(rdflib) if not name.startswith("_")}
-    for name in kc.__all__:
-        obj = getattr(kc, name)
-        assert obj not in rdflib_types, f"kc exports rdflib type: {name}"
+    for name in ["SchemaBuilder", "vocab", "text", "TextDescriptor",
+                 "KnowledgeComplex", "ValidationError", "UnknownQueryError"]:
+        obj = getattr(knowledgecomplex, name)
+        assert obj not in rdflib_types, f"knowledgecomplex exports rdflib type: {name}"
 
 
 # ---------------------------------------------------------------------------
 # Layer isolation
 # ---------------------------------------------------------------------------
 
-def test_model_schema_only_imports_from_kc_schema():
-    """models/mtg/schema.py should only import from kc.schema, not kc.graph or kc.exceptions."""
+def test_model_schema_imports_from_knowledgecomplex():
+    """models/mtg/schema.py should import from knowledgecomplex, not rdflib internals."""
     src = _read_source("models/mtg/schema.py")
-    assert not _has_import(src, "kc.graph"), "Model schema should not import from kc.graph"
-    assert not _has_import(src, "kc.exceptions"), "Model schema should not import from kc.exceptions"
+    assert _has_import(src, "knowledgecomplex"), "Model schema should import from knowledgecomplex"
 
 
 def test_model_does_not_reference_core_resources():

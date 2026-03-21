@@ -10,9 +10,7 @@ Traceability: see tests/requirements.md
 import pytest
 import pandas as pd
 
-from kc.schema import SchemaBuilder, vocab
-from kc.graph import KnowledgeComplex
-from kc.exceptions import ValidationError
+from knowledgecomplex import SchemaBuilder, vocab, KnowledgeComplex, ValidationError
 from models.mtg import build_mtg_schema, QUERIES_DIR
 
 

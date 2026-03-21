@@ -7,7 +7,7 @@ All exception classes are fully implemented — all tests should pass today.
 Traceability: see tests/requirements.md
 """
 
-from kc.exceptions import ValidationError, UnknownQueryError, SchemaError
+from knowledgecomplex import ValidationError, UnknownQueryError, SchemaError
 
 
 def test_validation_error_is_exception():

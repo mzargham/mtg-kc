@@ -73,7 +73,7 @@ pandas = ">=2.0"
 from models.mtg import build_mtg_schema, QUERIES_DIR
 
 # Layer 1: generic framework
-from kc.graph import KnowledgeComplex
+from knowledgecomplex import KnowledgeComplex
 
 sb = build_mtg_schema()
 kc = KnowledgeComplex(schema=sb, query_dirs=[QUERIES_DIR])

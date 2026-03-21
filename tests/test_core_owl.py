@@ -11,9 +11,10 @@ Traceability: see tests/requirements.md
 import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF, RDFS, OWL
+import knowledgecomplex
 
 KC = Namespace("https://example.org/kc#")
-_CORE_OWL = Path(__file__).parent.parent / "kc" / "resources" / "kc_core.ttl"
+_CORE_OWL = Path(knowledgecomplex.__file__).parent / "resources" / "kc_core.ttl"
 
 
 @pytest.fixture(scope="module")

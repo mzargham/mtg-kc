@@ -15,16 +15,7 @@ The concrete instance is a knowledge complex over the five Magic: The Gathering 
 ## Repository Layout
 
 ```
-kc/                          # Layer 1: generic KC framework
-  resources/
-    kc_core.ttl              #   OWL ontology (topological backbone)
-    kc_core_shapes.ttl       #   SHACL shapes (topological constraints)
-  queries/
-    vertices.sparql          #   framework query templates
-  schema.py                  #   SchemaBuilder — type/rule authoring API
-  graph.py                   #   KnowledgeComplex — instance I/O + validation
-  exceptions.py              #   ValidationError, SchemaError, UnknownQueryError
-  __init__.py                #   public API surface
+# Layer 1 is the published `knowledgecomplex` PyPI package (external dependency)
 
 models/
   mtg/                       # Layer 2: MTG domain model
@@ -48,12 +39,12 @@ docs/
 
 ## Abstraction Boundary (H6)
 
-**Critical invariant:** Code in `demo/` and `models/` never imports `rdflib`, `pyshacl`, or `owlrl`. These are internal implementation details of the `kc/` package. The public API surface is:
+**Critical invariant:** Code in `demo/` and `models/` never imports `rdflib`, `pyshacl`, or `owlrl`. These are internal implementation details of the `knowledgecomplex` package. The public API surface is:
 
 ```python
-from kc.schema import SchemaBuilder, vocab, text, TextDescriptor, VocabDescriptor
-from kc.graph import KnowledgeComplex
-from kc.exceptions import ValidationError, SchemaError, UnknownQueryError
+from knowledgecomplex import SchemaBuilder, vocab, text, TextDescriptor
+from knowledgecomplex import KnowledgeComplex
+from knowledgecomplex import ValidationError, SchemaError, UnknownQueryError
 ```
 
 If you write code that touches `demo/` or `models/`, do not introduce direct RDF library imports.

@@ -12,8 +12,8 @@ Traceability: see tests/requirements.md
 import pytest
 from rdflib import Graph  # allowed in tests; not in API under test
 
-from kc.schema import SchemaBuilder, vocab, VocabDescriptor
-from kc.exceptions import SchemaError
+from knowledgecomplex import SchemaBuilder, vocab, SchemaError
+from knowledgecomplex.schema import VocabDescriptor
 
 
 @pytest.fixture

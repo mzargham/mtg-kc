@@ -3,14 +3,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kc"
+name = "mtg-kc"
 version = "0.1.0"
-description = "Knowledge Complex — Semantic Web Toolchain Proof of Concept"
+description = "MTG Knowledge Complex — Domain model and demo using knowledgecomplex"
 requires-python = ">=3.11"
 dependencies = [
-    "rdflib>=7.0",
-    "pyshacl>=0.25",
-    "owlrl>=6.0",
+    "knowledgecomplex>=0.1.0",
     "pandas>=2.0",
 ]
 
@@ -30,4 +28,4 @@ testpaths = ["tests"]
 addopts = "-v --tb=short"
 
 [tool.hatch.build.targets.wheel]
-packages = ["kc", "models"]
+packages = ["models"]

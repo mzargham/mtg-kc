@@ -11,8 +11,7 @@ Returns a ready-to-use KnowledgeComplex for the Marimo notebook.
 REQ-DEMO-01 through REQ-DEMO-05.
 """
 
-from kc.schema import SchemaBuilder
-from kc.graph import KnowledgeComplex
+from knowledgecomplex import SchemaBuilder, KnowledgeComplex
 from models.mtg import build_mtg_schema, QUERIES_DIR
 
 

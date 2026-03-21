@@ -10,9 +10,7 @@ Traceability: REQ-CORE-02, REQ-CORE-03, REQ-GRAPH-02/03/04.
 import pytest
 import pandas as pd
 
-from kc.schema import SchemaBuilder, vocab
-from kc.graph import KnowledgeComplex
-from kc.exceptions import ValidationError
+from knowledgecomplex import SchemaBuilder, vocab, KnowledgeComplex, ValidationError
 from models.mtg import QUERIES_DIR
 
 

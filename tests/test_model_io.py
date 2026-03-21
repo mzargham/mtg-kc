@@ -11,9 +11,7 @@ Updated for WP4.5 enriched schema (structure/shard/wedge, text attributes).
 import pytest
 from pathlib import Path
 
-from kc.schema import SchemaBuilder, vocab, text
-from kc.graph import KnowledgeComplex
-from kc.exceptions import ValidationError
+from knowledgecomplex import SchemaBuilder, vocab, text, KnowledgeComplex, ValidationError
 
 
 @pytest.fixture

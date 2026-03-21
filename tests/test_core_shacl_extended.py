@@ -14,12 +14,14 @@ import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF
 import pyshacl
+import knowledgecomplex
 
 KC = Namespace("https://example.org/kc#")
 EX = Namespace("https://example.org/test#")
 
-_CORE_OWL    = Path(__file__).parent.parent / "kc" / "resources" / "kc_core.ttl"
-_CORE_SHAPES = Path(__file__).parent.parent / "kc" / "resources" / "kc_core_shapes.ttl"
+_KC_RESOURCES = Path(knowledgecomplex.__file__).parent / "resources"
+_CORE_OWL    = _KC_RESOURCES / "kc_core.ttl"
+_CORE_SHAPES = _KC_RESOURCES / "kc_core_shapes.ttl"
 
 
 def _load_shapes() -> Graph:
