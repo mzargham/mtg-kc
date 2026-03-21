@@ -17,7 +17,7 @@ Narrative arc (9 cells):
 
 WP5.
 
-H6 constraint: only kc imports allowed — no direct rdflib/pyshacl/owlrl usage.
+H6 constraint: only knowledgecomplex imports allowed — no direct rdflib/pyshacl/owlrl usage.
 REQ-VV-06.
 """
 
@@ -81,10 +81,16 @@ def cell_0_intro(mo):
     mo.md("""
 # Knowledge Complex: The MTG Color Wheel
 
-This notebook demonstrates the **knowledge complex** framework — a typed
+This notebook demonstrates the
+[**knowledgecomplex**](https://github.com/BlockScience/knowledgecomplex)
+framework — a typed
 [simplicial complex](https://en.wikipedia.org/wiki/Simplicial_complex)
 with schema-driven verification, encapsulated queries, and a clean Python API
 that hides the OWL/SHACL/SPARQL machinery underneath.
+
+```
+pip install knowledgecomplex
+```
 
 ## What is a knowledge complex?
 
@@ -102,8 +108,9 @@ across two orthogonal axes:
 | **Topological** | Element class hierarchy    | Boundary cardinality, closure |
 | **Ontological**  | Domain types & properties | Controlled vocabularies, required fields |
 
-This 2x2 responsibility map is enforced by the framework. Model authors use a
-Python DSL (`SchemaBuilder`) and never touch RDF directly.
+This 2×2 responsibility map is enforced by the
+[`knowledgecomplex`](https://pypi.org/project/knowledgecomplex/) package.
+Model authors use a Python DSL (`SchemaBuilder`) and never touch RDF directly.
 
 ## The demonstration domain
 
@@ -678,11 +685,12 @@ def cell_7_horizon(mo):
 
 Two threads of future work extend this foundation in complementary directions.
 
-### Tooling: Simplicial complex query API
+### Tooling: Simplicial complex operations
 
-The framework currently supports named SPARQL templates — pre-written queries
-that return DataFrames. The natural next step is a set of **simplicial complex
-traversal primitives** that leverage the native structure:
+The [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+package (available via `pip install knowledgecomplex`) already provides
+simplicial complex traversal primitives beyond the named SPARQL templates
+used in this demo:
 
 - **Boundary** (\u2202): the edges bounding a face, or the vertices bounding an edge
 - **Coboundary** (\u03b4): the faces containing an edge, or the edges containing a vertex
@@ -692,8 +700,10 @@ traversal primitives** that leverage the native structure:
 
 These operations compose: `Lk(v)` gives you everything "one hop away" from
 vertex `v`; `St(e) \u2229 Face` gives you the faces sharing an edge.
-With type filtering, they become a concise query language for local
-neighborhood exploration.
+
+The package also offers optional extras for visualization (`knowledgecomplex[viz]`)
+and algebraic topology (`knowledgecomplex[analysis]`) including Betti numbers,
+Hodge decomposition, and edge PageRank.
 
 ### Application: The Person vertex type
 
@@ -729,7 +739,12 @@ def cell_8_references(mo):
     mo.md("""
 ## References & Acknowledgements
 
-This project uses the five Magic: The Gathering colors as its test case.
+This notebook is built on the
+[**knowledgecomplex**](https://github.com/BlockScience/knowledgecomplex)
+Python package (`pip install knowledgecomplex`), which provides the
+`SchemaBuilder`, `KnowledgeComplex`, and the full OWL/SHACL/SPARQL machinery.
+
+The five Magic: The Gathering colors serve as the demonstration domain.
 The philosophical framework for the color wheel is drawn from the following source,
 which we gratefully acknowledge:
 

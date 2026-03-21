@@ -1,6 +1,6 @@
 # Terminology Audit
 
-## Status: Active (regression checks)
+## Status: Active — local to this repo (MTG domain terminology)
 
 ## Canonical Terms
 

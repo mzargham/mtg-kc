@@ -1,6 +1,17 @@
-# Issue: Support Oriented Simplices
+# Feature Request: Support Oriented Simplices
 
-## Status: Deferred (documented simplification)
+## Status: Feature request for [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+
+`knowledgecomplex` v0.1.0 explicitly documents unoriented simplices in
+`kc_core.ttl` and `kc_core_shapes.ttl`. The `boundedBy` property returns
+unordered sets. Supporting directed edges and oriented faces would require
+framework-level changes to the OWL ontology, SHACL shapes, and Python API.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred (documented simplification)
 
 ## Motivation
 

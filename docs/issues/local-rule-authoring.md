@@ -1,6 +1,19 @@
-# Deferred Issue: Local Rule Authoring via Query Primitives
+# Feature Request: Local Rule Authoring via Query Primitives
 
-## Status: Deferred
+## Status: Feature request for [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+
+`knowledgecomplex` v0.1.0 provides `add_sparql_constraint()` for raw SPARQL
+rules and the traversal primitives (boundary, coboundary, star, link) as query
+methods. However, the ergonomic rule-authoring API described here (Python Rule
+Builder, type-filtered coboundary predicates, constraint vocabulary) does not
+exist. Model authors must still compose raw SPARQL for neighborhood-based
+SHACL constraints.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred
 
 ## Summary
 
