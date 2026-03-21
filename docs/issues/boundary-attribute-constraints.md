@@ -1,6 +1,16 @@
-# Deferred Issue: Boundary-Derived Attribute Constraints
+# Feature Request: Boundary-Derived Attribute Constraints
 
-## Status: Deferred
+## Status: Feature request for [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+
+The proposed `add_boundary_attribute_constraint()` API does not exist in
+`knowledgecomplex` v0.1.0. Model authors must still write raw `sh:sparql`
+constraints via `add_sparql_constraint()` for cross-element attribute checks.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred
 
 ## Summary
 

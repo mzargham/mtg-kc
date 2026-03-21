@@ -1,8 +1,28 @@
-# Deferred Issue: Simplicial Complex Query API
+# Resolved: Simplicial Complex Query API
 
-## Status: Deferred
+## Status: Resolved — implemented in [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex) v0.1.0
 
-## Summary
+The published `knowledgecomplex` package provides all the traversal primitives
+described in this issue as first-class methods on `KnowledgeComplex`:
+
+| Operation | Method | Description |
+|-----------|--------|-------------|
+| Boundary | `boundary(id, *, type=None)` | Direct boundary elements |
+| Coboundary | `coboundary(id, *, type=None)` | Cofaces (inverse boundary) |
+| Star | `star(id, *, type=None)` | All simplices containing id |
+| Link | `link(id, *, type=None)` | Cl(St(id)) \ St(id) |
+| Closure | `closure(ids, *, type=None)` | Smallest subcomplex containing ids |
+| Closed Star | `closed_star(id, *, type=None)` | Cl(St(id)) |
+| Skeleton | `skeleton(k)` | All elements of dimension <= k |
+| Degree | `degree(id)` | Number of incident edges |
+
+All methods support optional type filtering. Install with `pip install knowledgecomplex`.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Summary
 
 The `KnowledgeComplex` needs a read-only query API that leverages the native
 structure of simplicial complexes. The standard operations — boundary, coboundary,

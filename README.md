@@ -8,62 +8,54 @@ The semantic web toolchain (OWL + SHACL + SPARQL via `rdflib`/`pyshacl`) is suff
 
 A demonstrator, not production code. End-to-end, fully working, but scoped to validate the toolchain hypothesis. The concrete instance is a knowledge complex over the five Magic: The Gathering colors, used because it is simple enough to understand immediately but non-trivial enough to exercise all framework layers.
 
+This repo uses the [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex) Python package as its framework layer. The package provides `SchemaBuilder`, `KnowledgeComplex`, and the full OWL/SHACL/SPARQL machinery — this repo provides the MTG domain model and demo on top of it.
+
+## Installation
+
+```bash
+pip install knowledgecomplex
+```
+
+Or with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv sync --all-extras
+```
+
 ## Repository Layout
 
-Three layers, designed for future separation:
-
-```
-kc/                          # Layer 1: generic KC framework (like numpy)
-  resources/
-    kc_core.ttl              #   abstract OWL ontology (topological backbone)
-    kc_core_shapes.ttl       #   abstract SHACL shapes (topological constraints)
-  queries/
-    vertices.sparql          #   generic query templates
-  schema.py                  #   SchemaBuilder — type and rule authoring API
-  graph.py                   #   KnowledgeComplex — instance I/O API
-  exceptions.py              #   ValidationError and friends
-  __init__.py
-
+```text
 models/
-  mtg/                       # Layer 2: MTG domain model (like scipy)
-    schema.py                #   MTG schema definition (Color, ColorPair, ColorTriple)
-    queries/
-      edges_by_disposition.sparql
-      faces_by_edge_pattern.sparql
+  mtg/                       # Domain model (Color, ColorPair, ColorTriple)
+    schema.py                #   build_mtg_schema() — type definitions + SPARQL constraints
+    queries/                 #   model-specific SPARQL templates
     __init__.py
 
-demo/                        # Layer 3: concrete instance + notebook
-  demo_instance.py           #   MTG color wheel (5 colors, 10 edges, 10 faces)
-  demo.py                    #   marimo notebook
+demo/                        # Concrete instance + published notebook
+  demo_instance.py           #   build_mtg_instance() — 5 colors, 10 edges, 10 faces
+  demo.py                    #   marimo notebook (published to GitHub Pages)
 
-tests/
-  test_core_owl.py
-  test_core_shacl.py
-  test_schema_builder.py
-  test_knowledge_complex.py
-  test_mtg_demo.py
+tests/                       # pytest suite (203 passed)
 
 docs/
-  PLAN.md                    # original project plan (historical)
-  ROADMAP.md                 # completed work summary and open issues
-  ARCHITECTURE.md            # 2x2 responsibility map and design decisions
-  REQUIREMENTS.md            # full requirements document
+  ARCHITECTURE.md            # 2×2 responsibility map and design decisions
+  REQUIREMENTS.md            # REQ-* identifiers (tests trace back to these)
 
 references/                  # reference materials (e.g. source articles)
-
-pyproject.toml
 ```
+
+The **framework layer** (OWL ontology, SHACL shapes, `SchemaBuilder`, `KnowledgeComplex`) lives in the [`knowledgecomplex`](https://pypi.org/project/knowledgecomplex/) package — installed as a dependency, not vendored in this repo.
 
 ## Dependencies
 
 ```toml
-rdflib = ">=7.0"
-pyshacl = ">=0.25"
-owlrl = ">=6.0"
-marimo = ">=0.6"
-networkx = ">=3.0"
-matplotlib = ">=3.8"
+knowledgecomplex = ">=0.1.0"   # framework (transitively brings rdflib, pyshacl, owlrl)
 pandas = ">=2.0"
+
+# optional extras:
+marimo = ">=0.6"               # [notebook]
+networkx = ">=3.0"             # [notebook]
+matplotlib = ">=3.8"           # [notebook]
 ```
 
 ## Usage Sketch

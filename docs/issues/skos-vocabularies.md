@@ -1,6 +1,17 @@
-# Deferred Issue: SKOS Vocabulary Formalization
+# Feature Request: SKOS Vocabulary Formalization
 
-## Status: Deferred
+## Status: Feature request for [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+
+`knowledgecomplex` v0.1.0 uses `sh:in` RDF Lists exclusively for controlled
+vocabularies. There is no SKOS integration (`skos:ConceptScheme`, `skos:Concept`,
+`skos:broader`/`skos:narrower`). This would be a framework enhancement for
+multi-model vocabulary governance.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred
 
 ## Summary
 

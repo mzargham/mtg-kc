@@ -1,6 +1,22 @@
-# Deferred Issue: Persistent Data Layer
+# Partially Resolved: Persistent Data Layer
 
-## Status: Deferred
+## Status: Partially resolved — file I/O in [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex) v0.1.0; triple store backend remains open
+
+The published `knowledgecomplex` package provides file-based persistence:
+
+- `save_graph(kc, path, format="turtle")` — serialize to file (Turtle, JSON-LD, N-Triples, RDF/XML)
+- `load_graph(kc, path, format=None, validate=False)` — parse file into instance graph (additive)
+- `dump_graph(kc, format="turtle")` — return serialized graph as string
+
+**Still open (feature request for knowledgecomplex):** The triple store backend
+(Apache Jena Fuseki or similar) described below has not been implemented. The
+in-memory architecture with per-mutation SHACL validation remains the only option.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred
 
 ## Summary
 

@@ -1,6 +1,22 @@
-# Issue: Support Temporal Complex Ordering
+# Resolved: Temporal Complex Ordering
 
-## Status: Deferred (documented simplification)
+## Status: Resolved — implemented in [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex) v0.1.0
+
+The published `knowledgecomplex` package provides:
+
+- **`Filtration`** — monotone subcomplex sequences with `append()`, `append_closure()`,
+  `from_function()`, `birth()`, `new_at()`, and `is_complete`
+- **`ComplexSequence`** — time-varying complexes via base complex + ordered `ComplexDiff` objects
+- **`ParametricSequence`** — parameter-indexed sequences
+
+These are semantics-agnostic: they can represent temporal evolution, thematic
+layers, trust levels, or any ordering. Install with `pip install knowledgecomplex`.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred (documented simplification)
 
 ## Motivation
 

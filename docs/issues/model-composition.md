@@ -1,6 +1,16 @@
-# Deferred Issue: Model Composition
+# Feature Request: Model Composition
 
-## Status: Deferred
+## Status: Feature request for [`knowledgecomplex`](https://github.com/BlockScience/knowledgecomplex)
+
+`knowledgecomplex` v0.1.0 uses a single `SchemaBuilder` per `KnowledgeComplex`.
+There is no schema merging, `ComposedSchema` wrapper, or multi-namespace support.
+Model composition requires building all types in one `SchemaBuilder` instance.
+
+---
+
+## Original Issue (preserved for reference)
+
+### Status: Deferred
 
 ## Summary
 
