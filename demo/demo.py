@@ -48,8 +48,7 @@ def cell_imports():
     if _project_root not in _sys.path:
         _sys.path.insert(0, _project_root)
 
-    from kc.schema import SchemaBuilder, vocab, text
-    from kc.exceptions import ValidationError
+    from knowledgecomplex import SchemaBuilder, vocab, text, ValidationError
     from demo_instance import build_mtg_instance
 
     def extract_attr(ttl, element_id, attr):

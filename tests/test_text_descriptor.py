@@ -11,9 +11,8 @@ Traceability: WP4.5 worklog, ARCHITECTURE.md
 import pytest
 from rdflib import Graph, Namespace, RDF, RDFS, OWL, XSD, URIRef
 
-from kc.schema import SchemaBuilder, vocab, text, TextDescriptor, VocabDescriptor
-from kc.graph import KnowledgeComplex
-from kc.exceptions import ValidationError
+from knowledgecomplex import SchemaBuilder, vocab, text, TextDescriptor, KnowledgeComplex, ValidationError
+from knowledgecomplex.schema import VocabDescriptor
 
 _SH = Namespace("http://www.w3.org/ns/shacl#")
 
@@ -316,7 +315,7 @@ class TestPromoteWithText:
     def test_promote_requires_vocab_or_text(self):
         sb = SchemaBuilder(namespace="tprom2")
         sb.add_vertex_type("V")
-        from kc.exceptions import SchemaError
+        from knowledgecomplex import SchemaError
         with pytest.raises(SchemaError):
             sb.promote_to_attribute("V", "x")
 

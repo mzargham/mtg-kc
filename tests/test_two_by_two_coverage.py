@@ -13,13 +13,15 @@ Traceability: see tests/requirements.md, ARCHITECTURE.md §2×2 Responsibility M
 import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF, RDFS, OWL, URIRef
+import knowledgecomplex
 
 KC  = Namespace("https://example.org/kc#")
 KCS = Namespace("https://example.org/kc/shape#")
 SH  = Namespace("http://www.w3.org/ns/shacl#")
 
-_CORE_OWL    = Path(__file__).parent.parent / "kc" / "resources" / "kc_core.ttl"
-_CORE_SHAPES = Path(__file__).parent.parent / "kc" / "resources" / "kc_core_shapes.ttl"
+_KC_RESOURCES = Path(knowledgecomplex.__file__).parent / "resources"
+_CORE_OWL    = _KC_RESOURCES / "kc_core.ttl"
+_CORE_SHAPES = _KC_RESOURCES / "kc_core_shapes.ttl"
 
 
 @pytest.fixture(scope="module")
@@ -90,7 +92,7 @@ def test_ontological_owl_cell_populated_by_schema_builder():
     After adding an edge type with a vocab attribute, dump_owl() should contain
     a user-namespace subclass of kc:Edge.
     """
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="test2x2")
     sb.add_edge_type("Rel", attributes={"x": vocab("a", "b")})
     ttl = sb.dump_owl()
@@ -110,7 +112,7 @@ def test_ontological_shacl_cell_populated_by_schema_builder():
     After adding an edge type with a vocab attribute, dump_shacl() should contain
     sh:in constraints for the vocab values.
     """
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="test2x2")
     sb.add_edge_type("Rel", attributes={"x": vocab("a", "b")})
     ttl = sb.dump_shacl()

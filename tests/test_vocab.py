@@ -10,7 +10,8 @@ Traceability: see tests/requirements.md
 import pytest
 from dataclasses import FrozenInstanceError
 
-from kc.schema import vocab, VocabDescriptor
+from knowledgecomplex import vocab
+from knowledgecomplex.schema import VocabDescriptor
 
 
 def test_vocab_single_value():

@@ -28,7 +28,7 @@ Design note — thematic_triad constraint:
     verified by re-deriving them from topology — the derivation IS the check.
 """
 
-from kc.schema import SchemaBuilder, vocab, text
+from knowledgecomplex import SchemaBuilder, vocab, text
 
 # Shared theme vocabulary — used in both ColorPair.theme and
 # ColorTriple.thematic_triad to enforce referential consistency.

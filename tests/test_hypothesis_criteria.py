@@ -13,14 +13,16 @@ import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF, RDFS, OWL, URIRef
 import pyshacl
+import knowledgecomplex
 
 KC  = Namespace("https://example.org/kc#")
 KCS = Namespace("https://example.org/kc/shape#")
 SH  = Namespace("http://www.w3.org/ns/shacl#")
 
 _ROOT        = Path(__file__).parent.parent
-_CORE_OWL    = _ROOT / "kc" / "resources" / "kc_core.ttl"
-_CORE_SHAPES = _ROOT / "kc" / "resources" / "kc_core_shapes.ttl"
+_KC_RESOURCES = Path(knowledgecomplex.__file__).parent / "resources"
+_CORE_OWL    = _KC_RESOURCES / "kc_core.ttl"
+_CORE_SHAPES = _KC_RESOURCES / "kc_core_shapes.ttl"
 EX = Namespace("https://example.org/test#")
 
 
@@ -45,7 +47,7 @@ def test_h1_topological_cells_populated():
 
 def test_h1_ontological_cells_populated():
     """H1 (API): both ontological cells are populated by SchemaBuilder."""
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="h1test")
     sb.add_edge_type("Rel", attributes={"x": vocab("a", "b")})
 
@@ -126,7 +128,7 @@ def test_h2_closed_triangle_rejects_open():
 
 def test_h3_add_edge_type_updates_both_dumps():
     """H3: a single add_edge_type() call changes both dump_owl() and dump_shacl()."""
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="h3test")
     owl_before = sb.dump_owl()
     shacl_before = sb.dump_shacl()
@@ -142,7 +144,7 @@ def test_h3_add_edge_type_updates_both_dumps():
 
 def test_h3_promote_updates_both_dumps():
     """H3: a single promote_to_attribute() call changes both dump_owl() and dump_shacl()."""
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="h3test")
     sb.add_face_type("F", attributes={"x": {"vocab": vocab("a"), "required": False}})
 
@@ -164,9 +166,9 @@ def test_h3_promote_updates_both_dumps():
 
 def test_h4_verification_catches_malformed_face():
     """H4: adding a face with non-closed-triangle edges raises ValidationError."""
-    from kc.schema import SchemaBuilder, vocab
-    from kc.graph import KnowledgeComplex
-    from kc.exceptions import ValidationError
+    from knowledgecomplex import SchemaBuilder, vocab
+    from knowledgecomplex import KnowledgeComplex
+    from knowledgecomplex import ValidationError
     from models.mtg import QUERIES_DIR
 
     sb = SchemaBuilder(namespace="h4test")
@@ -228,7 +230,7 @@ def test_h6_demo_notebook_opacity():
 def test_h6_schema_builder_returns_strings():
     """H6: SchemaBuilder public methods return str, not rdflib objects."""
     import rdflib
-    from kc.schema import SchemaBuilder, vocab
+    from knowledgecomplex import SchemaBuilder, vocab
     sb = SchemaBuilder(namespace="h6test")
     sb.add_vertex_type("V")
     owl = sb.dump_owl()
@@ -241,7 +243,7 @@ def test_h6_knowledge_complex_returns_strings_and_dataframes():
     """H6: KnowledgeComplex public methods return str or DataFrame, not rdflib objects."""
     import rdflib
     import pandas as pd
-    from kc.graph import KnowledgeComplex
+    from knowledgecomplex import KnowledgeComplex
     from models.mtg import build_mtg_schema, QUERIES_DIR
 
     sb = build_mtg_schema()
